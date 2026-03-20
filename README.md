@@ -12,7 +12,7 @@ Covers three levels of early algebraic thinking:
 
 Open the link below on any phone or computer browser. No installation, no login, no internet required after the first load.
 
-**Play here:** https://legallev-teach.github.io/expression-mission/expression-mission.html
+**Play here:** https://legallev-teach.github.io/expression-mission/
 
 ## For students
 
