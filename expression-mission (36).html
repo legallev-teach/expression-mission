@@ -1,0 +1,3427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expression Mission</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c28; --border:#2a2a3d;
+  --accent:#4f8ef7; --accent2:#7c3aed; --correct:#22c55e; --wrong:#ef4444;
+  --text:#f0f0f8; --muted:#6b6b8a; --amber:#f59e0b; --green:#34d399; --pink:#f87171;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+  display:flex;align-items:center;justify-content:center;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(ellipse at 30% 20%,rgba(79,142,247,.07) 0%,transparent 50%),
+             radial-gradient(ellipse at 70% 80%,rgba(124,58,237,.05) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+
+.screen{display:none;width:100%;max-width:680px;padding:24px;position:relative;z-index:1;animation:fadeIn .35s ease;}
+.screen.active{display:flex;flex-direction:column;align-items:center;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TITLE ── */
+.title-logo{font-family:var(--mono);font-size:clamp(3rem,9vw,5rem);font-weight:700;
+  letter-spacing:-2px;margin-bottom:8px;line-height:1.05;
+  background:linear-gradient(135deg, #4f8ef7 0%, #7ab3ff 40%, #a78bfa 80%, #4f8ef7 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;}
+.title-sub{font-size:.85rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:48px;text-align:center;}
+.name-wrap{width:100%;max-width:360px;margin-bottom:20px;}
+.name-wrap label{display:block;font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.name-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;color:var(--text);font-family:var(--sans);font-size:1.1rem;outline:none;transition:border-color .2s;}
+.name-wrap input:focus{border-color:var(--accent);}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--sans);font-weight:600;font-size:1rem;padding:13px 32px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;letter-spacing:.3px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#3d7ef5;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:.88rem;padding:10px 22px;}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted);}
+
+/* ── LEVEL SELECT ── */
+.greeting{font-size:.9rem;color:var(--muted);margin-bottom:28px;text-align:center;}
+.greeting span{color:var(--text);font-weight:500;}
+.level-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:480px;}
+.level-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:16px;}
+.level-card:hover:not(.locked){border-color:var(--accent);transform:translateX(4px);}
+.level-card.locked{opacity:.4;cursor:not-allowed;}
+.level-card.completed{border-color:var(--correct);}
+.level-num{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--accent);min-width:34px;}
+.level-card.completed .level-num{color:var(--correct);}
+.level-info{flex:1;}
+.level-title{font-weight:600;font-size:1rem;margin-bottom:2px;}
+.level-desc{font-size:.8rem;color:var(--muted);}
+.level-badge{font-size:.72rem;padding:3px 9px;border-radius:20px;font-weight:600;letter-spacing:.5px;}
+.badge-ready{background:rgba(79,142,247,.15);color:var(--accent);}
+.badge-done{background:rgba(34,197,94,.15);color:var(--correct);}
+.badge-locked{background:rgba(107,107,138,.15);color:var(--muted);}
+
+/* ── TUTORIAL ── */
+.tutorial-card{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:16px;}
+.tutorial-title{font-family:var(--mono);font-size:1rem;color:var(--accent);margin-bottom:16px;letter-spacing:-0.3px;}
+.tutorial-step{font-size:.95rem;line-height:1.7;color:var(--text);margin-bottom:12px;}
+.tutorial-step strong{color:var(--accent);}
+.tutorial-step .math{font-family:var(--mono);font-size:1.1rem;color:var(--text);}
+.tutorial-step .math .out{color:var(--amber);}
+.tutorial-step .math .xpart{color:var(--accent);}
+.tutorial-step .math .cpart{color:var(--green);}
+.tutorial-nav{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:8px;}
+.tutorial-dots{display:flex;gap:6px;}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s;}
+.tdot.on{background:var(--accent);}
+.skip-link{font-size:.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;}
+.skip-link:hover{color:var(--text);}
+
+/* ── GAME HEADER ── */
+.game-header{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.game-level-label{font-family:var(--mono);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.back-btn{font-size:.78rem;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);transition:color .2s;}
+.back-btn:hover{color:var(--text);}
+
+/* ── SEGMENTED PROGRESS ── */
+.seg-progress{display:flex;gap:4px;width:100%;margin-bottom:18px;}
+.seg{flex:1;height:5px;border-radius:3px;background:var(--surface2);transition:background .3s;}
+.seg.done{background:var(--correct);}
+.seg.active{background:var(--accent);}
+
+/* ── STREAK / INFO ROW ── */
+.info-row{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:16px;}
+/* streak badge removed */
+.diff-pips{display:flex;gap:4px;align-items:center;}
+.pip{width:6px;height:6px;border-radius:50%;background:var(--border);}
+.pip.on{background:var(--accent);}
+.score-display{font-family:var(--mono);font-size:.82rem;color:var(--text);}
+
+/* ── QUESTION CARD ── */
+.question-card{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:16px;}
+.q-prompt{font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.q-expr{font-family:var(--mono);font-size:clamp(1.5rem,4vw,2rem);font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:-.5px;position:relative;}
+.q-expr sup, .q-expr-text sup { font-size: 0.65em; vertical-align: super; line-height: 0; }
+.hi sup { font-size: 0.6em; vertical-align: super; line-height: 0; }
+.q-expr-wrap{position:relative;display:inline-block;padding:80px 44px 16px 44px;}
+.q-expr-wrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+.q-expr-text{position:relative;z-index:2;font-family:var(--mono);font-size:clamp(1.5rem,4vw,2rem);font-weight:700;letter-spacing:-.5px;}
+.step-label{font-size:.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+
+/* ── DRAG TEMPLATE ── */
+.expand-template{font-family:var(--mono);font-size:1.3rem;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:20px;}
+.drop-zone{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:46px;
+  background:var(--bg);border:2px dashed var(--border);border-radius:8px;
+  font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--text);transition:all .2s;padding:0 8px;cursor:pointer;}
+.drop-zone.over{border-color:var(--accent);background:rgba(79,142,247,.08);}
+.drop-zone.filled{border-style:solid;border-color:var(--accent);color:var(--accent);font-size:1.3rem;}
+.drop-zone.correct-zone{border-color:var(--correct);color:var(--correct);border-style:solid;font-size:1.3rem;}
+.drop-zone.wrong-zone{border-color:var(--wrong);color:var(--wrong);border-style:solid;}
+
+.op-text{font-family:var(--mono);font-size:1.2rem;font-weight:700;padding:0 1px;}
+.op-text.op-multiply{color:var(--amber);}
+.op-text.op-add{color:var(--green);}
+.op-text.op-sub{color:var(--pink);}
+
+/* ── TILE BANK ── */
+.tile-bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+.tile{font-family:var(--mono);font-size:1rem;font-weight:700;padding:9px 16px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  cursor:grab;user-select:none;transition:all .15s;color:var(--accent);}
+.tile:hover{border-color:var(--accent);transform:translateY(-2px);}
+.tile.used{opacity:.25;cursor:not-allowed;}
+.tile:active{cursor:grabbing;transform:scale(.95);}
+
+/* ── ANSWER INPUT ── */
+.answer-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.answer-prefix{font-family:var(--mono);font-size:.95rem;color:var(--muted);white-space:nowrap;}
+.answer-input{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:10px;
+  padding:11px 14px;color:var(--text);font-family:var(--mono);font-size:1.1rem;
+  outline:none;transition:border-color .2s;text-align:center;}
+.answer-input:focus{border-color:var(--accent);}
+.answer-input.correct{border-color:var(--correct);background:rgba(34,197,94,.05);}
+.answer-input.wrong{border-color:var(--wrong);background:rgba(239,68,68,.05);animation:shake .4s ease;}
+.answer-input.locked{border-color:var(--correct);background:rgba(34,197,94,.05);color:var(--correct);pointer-events:none;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ── COLLECT BOX ── */
+.collect-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;font-family:var(--mono);font-size:.95rem;}
+.collect-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;color:var(--muted);}
+.collect-row.result-row{border-top:1px solid var(--border);padding-top:10px;margin-top:4px;color:var(--text);}
+.collect-val{color:var(--text);}
+.collect-val .xc{color:var(--accent);}
+.collect-val .nc{color:var(--green);}
+
+/* ── KEYPAD ── */
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;width:100%;margin-top:14px;}
+.key{font-family:var(--mono);font-size:.95rem;font-weight:700;padding:12px 6px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  cursor:pointer;color:var(--text);transition:all .12s;text-align:center;}
+.key:hover{background:var(--border);transform:translateY(-1px);}
+.key:active{transform:scale(.93);}
+.key-x{background:rgba(79,142,247,.18);color:var(--accent);border-color:rgba(79,142,247,.4);font-size:1.1rem;}
+.key-del{color:var(--pink);}
+.key-action{background:var(--accent);color:#fff;border-color:var(--accent);}
+.key-action:hover{background:#3d7ef5;}
+
+/* ── FEEDBACK ── */
+.feedback-box{width:100%;border-radius:12px;padding:16px 18px;margin-top:10px;font-size:.9rem;line-height:1.65;display:none;}
+.feedback-box.show{display:block;animation:fadeIn .3s ease;}
+.hint-box{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);color:#a8c4fb;}
+.correct-box{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#86efac;}
+.wrong-box{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);color:var(--text);}
+.worked{font-family:var(--mono);font-size:.82rem;margin-top:10px;color:var(--muted);line-height:2.1;}
+.worked .whi{color:var(--accent);}
+
+/* ── ACTION ROW ── */
+.action-row{display:flex;gap:10px;width:100%;margin-top:14px;flex-wrap:wrap;}
+.btn-submit{flex:1;font-family:var(--sans);font-weight:600;font-size:1rem;padding:13px;
+  background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:all .2s;min-width:110px;}
+.btn-submit:hover{background:#3d7ef5;}
+.btn-submit:disabled{opacity:.35;cursor:not-allowed;}
+.btn-hint{font-family:var(--sans);font-size:.88rem;padding:13px 18px;background:transparent;
+  color:var(--muted);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s;}
+.btn-hint:hover{color:var(--text);border-color:var(--muted);}
+
+/* ── NEXT / REDO ── */
+.btn-next{width:100%;font-family:var(--sans);font-weight:600;font-size:1rem;padding:13px;
+  background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;transition:all .2s;margin-top:10px;display:none;}
+.btn-next.show{display:block;}
+.btn-next:hover{border-color:var(--accent);color:var(--accent);}
+.btn-redo{width:100%;font-family:var(--sans);font-size:.88rem;padding:10px;
+  background:transparent;color:var(--muted);border:1px dashed var(--border);border-radius:10px;
+  cursor:pointer;transition:all .2s;margin-top:6px;display:none;}
+.btn-redo.show{display:block;}
+.btn-redo:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── VERIFY BUTTONS ── */
+.verify-btns{display:flex;gap:12px;width:100%;margin-top:8px;}
+.btn-verify{flex:1;font-family:var(--mono);font-size:1.05rem;font-weight:700;padding:15px;
+  border-radius:10px;border:2px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:all .2s;}
+.btn-verify.yes:hover{border-color:var(--correct);color:var(--correct);background:rgba(34,197,94,.08);}
+.btn-verify.no:hover{border-color:var(--wrong);color:var(--wrong);background:rgba(239,68,68,.06);}
+
+/* ── SPEED ROUND ── */
+.speed-banner{width:100%;max-width:480px;background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(79,142,247,.15));
+  border:1px solid rgba(124,58,237,.3);border-radius:14px;padding:22px 24px;text-align:center;margin-bottom:20px;}
+.speed-title{font-family:var(--mono);font-size:1rem;font-weight:700;color:#a78bfa;margin-bottom:6px;}
+.speed-sub{font-size:.85rem;color:var(--muted);margin-bottom:16px;}
+.speed-btns{display:flex;gap:10px;justify-content:center;}
+.timer-ring{font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:6px;}
+.timer-ring.urgent{color:var(--wrong);animation:pulse .5s infinite alternate;}
+@keyframes pulse{from{opacity:1}to{opacity:.4}}
+
+/* ── COMPLETE ── */
+.complete-icon{font-size:2.8rem;margin-bottom:14px;}
+.complete-title{font-family:var(--mono);font-size:1.7rem;font-weight:700;color:var(--correct);margin-bottom:6px;text-align:center;}
+.complete-sub{color:var(--muted);font-size:.92rem;margin-bottom:28px;text-align:center;}
+.stats-row{display:flex;gap:14px;margin-bottom:28px;width:100%;max-width:380px;}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.stat-num{font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--accent);}
+.stat-label{font-size:.72rem;color:var(--muted);margin-top:3px;letter-spacing:1px;text-transform:uppercase;}
+
+/* ── SUMMARY CARD ── */
+.summary-card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:20px;}
+.summary-header{font-family:var(--mono);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+.summary-name{font-family:var(--mono);font-size:1.3rem;font-weight:700;color:var(--accent);margin-bottom:18px;}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:.88rem;}
+.summary-row:last-of-type{border-bottom:none;}
+.summary-row .label{color:var(--muted);}
+.summary-row .val{font-family:var(--mono);font-weight:700;color:var(--text);}
+.summary-code{margin-top:18px;background:var(--bg);border-radius:10px;padding:14px;text-align:center;}
+.summary-code .code-label{font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.summary-code .code-val{font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--accent);letter-spacing:3px;}
+.screenshot-hint{font-size:.75rem;color:var(--muted);text-align:center;margin-bottom:20px;}
+
+/* ── TEACHER DASHBOARD ── */
+.dash-header{font-family:var(--mono);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;}
+.dash-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.dash-table th{font-family:var(--mono);font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.dash-table td{padding:10px 12px;border-bottom:1px solid var(--surface2);font-family:var(--mono);}
+.dash-table tr:last-child td{border-bottom:none;}
+.dash-empty{font-size:.85rem;color:var(--muted);text-align:center;padding:32px;}
+.dash-close{position:absolute;top:24px;right:24px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;}
+.dash-close:hover{color:var(--text);}
+
+/* ── LEVEL 3 VERIFY ── */
+.verify-intro{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:24px;margin-bottom:16px;max-width:520px;}
+.verify-intro-text{font-size:1rem;line-height:1.75;color:var(--text);margin-bottom:20px;}
+.verify-intro-text strong{color:var(--accent);}
+.verify-intro-btns{display:flex;flex-wrap:wrap;gap:8px;}
+.verify-intro-btn{font-family:var(--sans);font-size:.88rem;font-weight:600;
+  padding:10px 18px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;transition:all .2s;}
+.verify-intro-btn:hover{border-color:var(--accent);color:var(--accent);}
+.verify-intro-btn.help{border-color:rgba(245,158,11,.4);color:var(--amber);}
+.verify-intro-btn.help:hover{background:rgba(245,158,11,.08);}
+
+.eq-columns{display:flex;gap:0;width:100%;border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.eq-col{flex:1;padding:16px;background:var(--surface);}
+.eq-col.lhs{border-right:2px solid var(--border);}
+.eq-col-label{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;}
+.eq-col-expr{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text);line-height:2;}
+.eq-col-expr .step{display:block;color:var(--muted);font-size:.95rem;}
+.eq-col-expr .step.result{color:var(--accent);font-size:1.1rem;}
+.eq-verdict{text-align:center;font-family:var(--mono);font-size:1.3rem;font-weight:700;
+  padding:12px;border-radius:10px;margin-bottom:16px;}
+.eq-verdict.equal{background:rgba(34,197,94,.1);color:var(--correct);border:1px solid rgba(34,197,94,.3);}
+.eq-verdict.notequal{background:rgba(239,68,68,.08);color:var(--wrong);border:1px solid rgba(239,68,68,.2);}
+
+/* ── HELP ANIMATION ── */
+#help-anim{position:fixed;inset:0;background:rgba(10,10,15,.96);z-index:150;
+  display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+#help-anim.show{display:flex;}
+.help-step{font-family:var(--mono);font-size:1.1rem;color:var(--text);
+  text-align:center;margin-bottom:16px;opacity:0;transition:opacity .8s;}
+.help-step.visible{opacity:1;}
+.help-step .hl{color:var(--accent);}
+.help-step .correct{color:var(--correct);}
+.help-step .wrong{color:var(--wrong);}
+#help-close{margin-top:24px;opacity:0;transition:opacity .5s;}
+/* ── VALUE ANIMATIONS ── */
+@keyframes shakeVal{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes pulseGreen{0%,100%{color:var(--correct);text-shadow:none}50%{text-shadow:0 0 12px rgba(34,197,94,.8)}}
+.xval-wrong{color:var(--wrong)!important;animation:shakeVal .5s ease;}
+.xval-correct{color:var(--correct)!important;animation:pulseGreen .8s ease 3;}
+
+/* ── VERTICAL FRACTION ── */
+.vfrac{display:inline-flex;flex-direction:column;align-items:center;
+  font-family:var(--mono);vertical-align:middle;margin:0 2px;line-height:1.2;}
+.vfrac .num{border-bottom:2px solid currentColor;padding:0 4px 2px;font-size:.9em;}
+.vfrac .den{padding:2px 4px 0;font-size:.9em;}
+
+/* ── IMPLIED OPERATION QUIZ ── */
+.implied-box{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);
+  border-radius:12px;padding:14px 16px;margin-top:12px;margin-bottom:4px;}
+.implied-q{font-size:.88rem;color:var(--text);margin-bottom:10px;line-height:1.5;}
+.implied-q strong{color:var(--accent);font-family:var(--mono);}
+.implied-btns{display:flex;gap:8px;}
+.implied-btn{flex:1;font-family:var(--mono);font-size:.9rem;font-weight:700;
+  padding:10px 6px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;text-align:center;}
+.implied-btn:hover{border-color:var(--accent);color:var(--accent);}
+.implied-btn.correct-op{border-color:var(--correct);background:rgba(34,197,94,.1);color:var(--correct);}
+.implied-btn.wrong-op{border-color:var(--wrong);background:rgba(239,68,68,.08);color:var(--wrong);}
+.implied-box.correct-op{border-color:var(--correct);background:rgba(34,197,94,.06);}
+#teacher-lock{position:fixed;top:18px;right:18px;background:none;border:none;
+  font-size:1.35rem;line-height:1;cursor:pointer;opacity:.28;transition:opacity .2s;z-index:10;
+  filter:grayscale(1);padding:0;}
+#teacher-lock:hover{opacity:.7;filter:grayscale(0);}
+#mute-btn{position:fixed;top:18px;right:54px;background:none;border:none;
+  font-size:1.35rem;line-height:1;cursor:pointer;opacity:.28;transition:all .2s;z-index:10;
+  color:var(--muted);padding:0;}
+#mute-btn:hover{opacity:.7;}
+#mute-btn.muted{opacity:.7;color:var(--wrong);}
+
+/* ── PIN OVERLAY ── */
+#pin-overlay{position:fixed;inset:0;background:rgba(10,10,15,.92);
+  display:none;align-items:center;justify-content:center;z-index:200;}
+#pin-overlay.show{display:flex;}
+#pin-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px 28px;width:100%;max-width:320px;text-align:center;}
+#pin-title{font-family:var(--mono);font-size:.8rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:24px;}
+#pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:8px;}
+#pin-dots span{width:12px;height:12px;border-radius:50%;background:var(--border);transition:background .15s;}
+#pin-dots span.filled{background:var(--accent);}
+#pin-error{font-size:.78rem;color:var(--wrong);height:18px;margin-bottom:16px;transition:opacity .3s;}
+#pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+#pin-keypad button{
+  font-family:var(--mono);font-size:1.2rem;font-weight:700;
+  padding:0;height:56px;width:100%;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;}
+#pin-keypad button:hover{background:var(--border);}
+#pin-keypad button:active{transform:scale(.93);}
+#pin-cancel{font-size:.75rem;color:var(--muted);letter-spacing:1px;}
+#starfield{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.6;}
+
+/* ── ROCKET PROGRESS ── */
+#rocket-wrap{position:fixed;right:14px;top:0;bottom:0;width:64px;
+  display:none;align-items:center;justify-content:flex-end;
+  padding-bottom:20px;z-index:10;pointer-events:none;}
+#rocket-wrap.show{display:flex;}
+#rocket-canvas{position:absolute;top:0;left:0;width:100%;height:100%;
+  cursor:pointer;pointer-events:all;}
+
+/* ── ROCKET CHEER BUBBLE ── */
+#cheer-bubble{position:fixed;right:70px;background:var(--surface);border:1px solid var(--accent);
+  border-radius:12px;padding:10px 14px;font-size:.82rem;color:var(--text);
+  max-width:180px;z-index:20;opacity:0;pointer-events:none;
+  box-shadow:0 4px 20px rgba(79,142,247,.2);transition:opacity .3s;}
+#cheer-bubble.show{opacity:1;}
+#cheer-bubble::after{content:'';position:absolute;right:-7px;top:50%;transform:translateY(-50%);
+  border:7px solid transparent;border-right:none;border-left-color:var(--accent);}
+
+/* ── MISSION PATCHES ── */
+.mission-patch{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:1.6rem;border:2px solid var(--border);
+  background:var(--surface2);transition:all .4s;flex-shrink:0;}
+.mission-patch.earned{border-color:var(--amber);background:rgba(245,158,11,.1);
+  box-shadow:0 0 16px rgba(245,158,11,.3);animation:patchGlow 2s infinite alternate;}
+@keyframes patchGlow{from{box-shadow:0 0 8px rgba(245,158,11,.3)}to{box-shadow:0 0 20px rgba(245,158,11,.5)}}
+
+/* ── LAUNCH ANIMATION OVERLAY ── */
+#launch-overlay{position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:none;flex-direction:column;align-items:center;justify-content:center;}
+#launch-overlay.show{display:flex;}
+#launch-rocket{font-size:4rem;animation:launch 2.2s cubic-bezier(.4,0,.2,1) forwards;}
+@keyframes launch{
+  0%{transform:translateY(0) scale(1);opacity:1;}
+  30%{transform:translateY(-15vh) scale(1.1);opacity:1;}
+  70%{transform:translateY(-60vh) scale(1.2);opacity:.8;}
+  100%{transform:translateY(-110vh) scale(.6);opacity:0;}
+}
+#launch-text{font-family:var(--mono);font-size:1.1rem;color:var(--accent);
+  margin-top:20px;letter-spacing:2px;animation:fadeIn .5s ease .3s both;}
+
+/* ── STREAK FLAMES ── */
+/* streak flames handled in updateRocket via flame height */
+
+@media(max-width:480px){
+  /* ── LAYOUT ── */
+  body{align-items:flex-start;}
+  .screen{padding:12px 12px 0 12px;}
+
+  /* ── TITLE SCREEN ── */
+  .title-logo{font-size:clamp(2.4rem,11vw,3.5rem);text-align:center;}
+  .title-sub{text-align:center;font-size:.65rem;}
+  #teacher-lock{top:14px;right:14px;font-size:1.2rem;}
+  #mute-btn{top:14px;right:48px;font-size:1.2rem;}
+
+  /* ── GAME SCREEN ── */
+  .question-card{padding:16px;margin-bottom:10px;border-radius:12px;}
+  .q-prompt{font-size:.68rem;margin-bottom:8px;}
+  .q-expr{font-size:clamp(1.1rem,5vw,1.5rem);margin-bottom:12px;}
+  .q-expr-text{font-size:clamp(1.1rem,5vw,1.5rem);}
+
+  /* ── DRAG TEMPLATE ── */
+  .expand-template{font-size:1rem;gap:3px;margin-bottom:12px;}
+  .drop-zone{min-width:38px;height:36px;font-size:.95rem;padding:0 5px;}
+  .drop-zone.filled,.drop-zone.correct-zone{font-size:1rem;}
+
+  /* ── TILES ── */
+  .tile-bank{gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .tile{font-size:.88rem;padding:7px 12px;}
+
+  /* ── ANSWER INPUT ── */
+  .answer-row{gap:6px;}
+  .answer-input{font-size:.95rem;padding:9px 10px;}
+
+  /* ── KEYPAD ── */
+  .keypad{gap:5px;margin-top:8px;}
+  .key{padding:10px 4px;font-size:.88rem;}
+
+  /* ── ACTION ROW ── */
+  .action-row{margin-top:8px;gap:8px;}
+  .btn-submit{padding:11px;font-size:.95rem;}
+  .btn-hint{padding:11px 14px;font-size:.82rem;}
+  .btn-next,.btn-redo{padding:10px;}
+
+  /* ── STATS ROW ── */
+  .stats-row{flex-wrap:wrap;}
+
+  /* ── ROCKET — slim on mobile, orb mode handles blocking ── */
+  #rocket-wrap{right:0;width:32px;}
+  #rocket-canvas{pointer-events:none;}
+}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<!-- ══ ROCKET PROGRESS ══════════════════════════════════════════ -->
+<div id="rocket-wrap">
+  <canvas id="rocket-canvas" onclick="rocketTap()"></canvas>
+</div>
+<div id="cheer-bubble"></div>
+
+<!-- ══ LAUNCH OVERLAY ══════════════════════════════════════════ -->
+<div id="launch-overlay">
+  <div id="launch-rocket">🚀</div>
+  <div id="launch-text"></div>
+</div>
+
+<!-- ══ TITLE ══════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-title">
+  <button id="teacher-lock" onclick="showPinPrompt()" title="Teacher access">🔒</button>
+  <button id="mute-btn" onclick="toggleMute()" title="Toggle sound">🔊</button>
+  <div class="title-logo">Expression<br>Mission</div>
+  <div class="title-sub">Expansion · Substitution · Does It Work?</div>
+  <div class="name-wrap">
+    <label>Your name</label>
+    <input type="text" id="player-name" placeholder="Enter your name" autocomplete="off"/>
+  </div>
+  <button class="btn btn-primary" onclick="startGame()">Begin Mission</button>
+</div>
+
+<!-- ══ HELP ANIMATION ════════════════════════════════════════════ -->
+<div id="help-anim">
+  <div id="help-steps"></div>
+  <button class="btn btn-ghost" id="help-close" onclick="closeHelpAnim()">I understand — close</button>
+</div>
+
+<!-- ══ PIN OVERLAY ═════════════════════════════════════════════ -->
+<div id="pin-overlay">
+  <div id="pin-box">
+    <div id="pin-title">Teacher Access</div>
+    <div id="pin-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div id="pin-error"></div>
+    <div id="pin-keypad">
+      <button onclick="pinKey('1')">1</button><button onclick="pinKey('2')">2</button><button onclick="pinKey('3')">3</button>
+      <button onclick="pinKey('4')">4</button><button onclick="pinKey('5')">5</button><button onclick="pinKey('6')">6</button>
+      <button onclick="pinKey('7')">7</button><button onclick="pinKey('8')">8</button><button onclick="pinKey('9')">9</button>
+      <button onclick="pinKey('cancel')" id="pin-cancel">Cancel</button>
+      <button onclick="pinKey('0')">0</button>
+      <button onclick="pinKey('del')">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEVEL SELECT ════════════════════════════════════════════ -->
+<div class="screen" id="screen-levels">
+  <div style="position:relative;width:100%;max-width:480px;margin-bottom:6px;">
+    <div class="title-logo" style="font-size:1.3rem;margin-bottom:4px;">Expression Mission</div>
+    <p class="greeting">Welcome, <span id="greeting-name"></span></p>
+  </div>
+  <div class="level-cards">
+    <div class="level-card" id="card-l1" onclick="beginLevel(1)">
+      <div class="mission-patch" id="patch-l1">🧮</div>
+      <div class="level-num">01</div>
+      <div class="level-info">
+        <div class="level-title">Expansion</div>
+        <div class="level-desc">Multiply everything inside the bracket</div>
+      </div>
+      <div class="level-badge badge-ready" id="badge-l1">Ready</div>
+    </div>
+    <div class="level-card locked" id="card-l2" onclick="beginLevel(2)">
+      <div class="mission-patch" id="patch-l2">🔭</div>
+      <div class="level-num">02</div>
+      <div class="level-info">
+        <div class="level-title">Substitution</div>
+        <div class="level-desc">Replace x and evaluate</div>
+      </div>
+      <div class="level-badge badge-locked" id="badge-l2">Locked</div>
+    </div>
+    <div class="level-card locked" id="card-l3" onclick="beginLevel(3)">
+      <div class="mission-patch" id="patch-l3">⚖️</div>
+      <div class="level-num">03</div>
+      <div class="level-info">
+        <div class="level-title">Does It Work?</div>
+        <div class="level-desc">Test whether a value of x makes the equation true</div>
+      </div>
+      <div class="level-badge badge-locked" id="badge-l3">Locked</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TUTORIAL ════════════════════════════════════════════════ -->
+<div class="screen" id="screen-tutorial">
+  <div class="tutorial-card" id="tutorial-card" style="max-width:520px;width:100%;"></div>
+  <div class="tutorial-nav" style="max-width:520px;width:100%;">
+    <div class="tutorial-dots" id="tutorial-dots"></div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <span class="skip-link" onclick="endTutorial()">Skip intro</span>
+      <button class="btn btn-primary" id="tut-btn" onclick="tutNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME ════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-game">
+  <div class="game-header" style="width:100%;">
+    <button class="back-btn" onclick="confirmHome()" title="Home">🏠 Home</button>
+    <div class="game-level-label" id="game-level-label">Level 1 — Expansion</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="score-display"><span id="score-correct">0</span>/<span id="score-total">0</span></div>
+    </div>
+  </div>
+
+  <div class="seg-progress" id="seg-progress"></div>
+
+  <div class="info-row">
+    <div class="diff-pips" id="diff-pips">
+      <div class="pip on"></div><div class="pip"></div><div class="pip"></div>
+    </div>
+    <div id="timer-display" style="display:none;">
+      <div class="timer-ring" id="timer-num">10</div>
+    </div>
+  </div>
+
+  <div class="question-card" id="question-card">
+    <div class="q-prompt" id="q-prompt">Expand the expression</div>
+    <div class="q-expr" id="q-expr"></div>
+    <div id="q-body"></div>
+  </div>
+
+  <div class="feedback-box hint-box" id="hint-box"></div>
+  <div class="feedback-box wrong-box" id="wrong-box"></div>
+  <div class="feedback-box correct-box" id="correct-box"></div>
+
+  <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+  <button class="btn-redo" id="btn-redo" onclick="redoQuestion()">↩ Try again (½ mark)</button>
+
+  <div class="action-row">
+    <button class="btn-hint" id="btn-hint" onclick="showHint()">Hint</button>
+    <button class="btn-submit" id="btn-submit" onclick="submitAnswer()">Check →</button>
+  </div>
+
+  <div class="keypad" id="keypad"></div>
+</div>
+
+<!-- ══ SPEED OFFER ═════════════════════════════════════════════ -->
+<div class="screen" id="screen-speed">
+  <div class="speed-banner">
+    <div class="speed-title">🔥 Speed Round</div>
+    <div class="speed-sub">You're on a roll. Think you can do that faster?</div>
+    <div class="speed-btns">
+      <button class="btn btn-primary" onclick="startSpeedRound()">Let's go</button>
+      <button class="btn btn-ghost" onclick="skipSpeedRound()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEVEL COMPLETE ══════════════════════════════════════════ -->
+<div class="screen" id="screen-complete">
+  <div class="complete-icon">✦</div>
+  <div class="complete-title" id="complete-title">Level Complete</div>
+  <div class="complete-sub" id="complete-sub">Mission accomplished.</div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-num" id="stat-score">0</div><div class="stat-label">Correct</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Questions</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Accuracy</div></div>
+  </div>
+  <button class="btn btn-primary" id="complete-btn" onclick="completeAction()" style="margin-bottom:12px;">Continue →</button>
+</div>
+
+<!-- ══ FINAL SUMMARY ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-summary">
+  <div class="summary-card" id="summary-card">
+    <div class="summary-header">🚀 Flight Record</div>
+    <div class="summary-name" id="sum-name"></div>
+    <div class="summary-row"><span class="label">Level 1 — Expansion</span><span class="val" id="sum-l1">—</span></div>
+    <div class="summary-row"><span class="label">Level 2 — Substitution</span><span class="val" id="sum-l2">—</span></div>
+    <div class="summary-row"><span class="label">Level 3 — Does It Work?</span><span class="val" id="sum-l3">—</span></div>
+    <div class="summary-row"><span class="label">Overall accuracy</span><span class="val" id="sum-overall">—</span></div>
+    <div class="summary-row"><span class="label">Hints used</span><span class="val" id="sum-hints">—</span></div>
+    <div class="summary-row"><span class="label">Corrected (½ mark)</span><span class="val" id="sum-redos">—</span></div>
+    <div class="summary-code">
+      <div class="code-label">Mission Log</div>
+      <div class="code-val" id="sum-code"></div>
+    </div>
+  </div>
+  <p class="screenshot-hint">📸 Screenshot your Flight Record and send it to your teacher</p>
+  <button class="btn btn-ghost" onclick="show('screen-levels')">Back to menu</button>
+</div>
+
+<!-- ══ TEACHER DASHBOARD ═══════════════════════════════════════ -->
+<div class="screen" id="screen-teacher" style="max-width:720px;">
+  <button class="dash-close" onclick="show('screen-title')">✕</button>
+  <div class="dash-header">🔐 Teacher Dashboard</div>
+
+  <div style="width:100%;margin-bottom:24px;">
+    <div style="font-size:.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Student Records
+      <span style="font-size:.7rem;color:var(--muted);font-weight:normal;margin-left:8px;">(stored on this device only)</span>
+    </div>
+    <div id="dash-content"></div>
+  </div>
+
+  <div style="width:100%;margin-bottom:24px;">
+    <div style="font-size:.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">📋 Bulk Mission Log Decoder</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;">Paste Mission Log codes below — one per line. The table updates instantly.</div>
+      <textarea id="bulk-codes" placeholder="Paste codes here, one per line&#10;e.g.&#10;Andrew-L1:8/10-L2:7/10-L3:4/4-H:3-R:1-S:abc123" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:10px;resize:vertical;outline:none;"></textarea>
+      <button class="btn btn-ghost" style="margin-top:8px;font-size:.82rem;" onclick="bulkDecode()">Decode →</button>
+      <div id="bulk-result" style="margin-top:12px;overflow-x:auto;"></div>
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">LLM Decoder prompt — copy this with your codes into any AI assistant:</div>
+        <div id="llm-prompt-box" style="background:var(--bg);border-radius:8px;padding:10px;font-family:var(--mono);font-size:.72rem;color:var(--muted);line-height:1.6;cursor:pointer;" onclick="copyLLMPrompt()" title="Click to copy">
+          Decode these Expression Mission Flight Record codes. Each code format is:<br>
+          NAME-L1:score/total-L2:score/total-L3:score/total-H:hints-R:redos-S:sessionID<br>
+          Present results as a table with columns: Name, L1, L2, L3, Hints, Redos, Overall%<br>
+          <span style="color:var(--accent);">↑ Click to copy this prompt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width:100%;margin-bottom:24px;">
+    <div style="font-size:.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);margin-bottom:10px;">🛠 Debug Panel</div>
+    <div style="background:var(--surface);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:16px;">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Use these to test specific parts of the game quickly. Enter your name first on the title screen.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugSkip(1)">▶ Jump to Level 1</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugSkip(2)">▶ Jump to Level 2</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugSkip(3)">▶ Jump to Level 3</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugNearEnd()">▶ Jump to Q8 of current level</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugForceComplete()">▶ Force level complete</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugDiff(1)">Difficulty: Easy</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugDiff(2)">Difficulty: Mid</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;" onclick="debugDiff(3)">Difficulty: Hard</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;color:var(--pink);" onclick="debugClearMyRecord()">Clear my test records</button>
+        <button class="btn btn-ghost" style="font-size:.82rem;padding:8px 14px;color:var(--pink);" onclick="clearDashboard()">Clear ALL student records</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:4px;">
+    <button class="btn btn-ghost" onclick="show('screen-title')">Close</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  name:'', currentLevel:1,
+  l1Complete:false, l2Complete:false, l3Complete:false,
+  l1Score:0, l1Total:0, l1Corrected:0,
+  l2Score:0, l2Total:0, l2Corrected:0,
+  l3Score:0, l3Total:0, l3Corrected:0,
+  score:0, total:0, corrected:0,
+  streak:0, wrongStreak:0, difficulty:1,
+  questionsDone:0, questionsPerLevel:10,
+  hintIndex:0, currentQ:null,
+  speedRoundActive:false, timerInterval:null, timerSec:10,
+  awaitingNext:false, speedOfferShown:false,
+  doublePhase:0,
+  doubleResults:[],
+  redoActive:false,
+  savedQ:null,
+  substDragCorrect:0,
+  verifyIntroShown:false,
+  totalHintsUsed:0,
+  sessionID: Math.random().toString(36).slice(2,8),  // counts correct drag drops in Level 2 for implied-op teaching
+};
+
+// ═══════════════════════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════════════════════
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-game') showRocket();
+  else hideRocket();
+}
+
+function confirmHome(){
+  if(S.questionsDone>0 && !S.awaitingNext){
+    if(!confirm('Go home? Your progress in this level will be saved.')) return;
+  }
+  clearTimer();
+  saveProgress();
+  show('screen-levels');
+}
+function goBack(){ confirmHome(); }
+
+// ═══════════════════════════════════════════════════════
+//  SAVE / RESTORE PROGRESS
+// ═══════════════════════════════════════════════════════
+function saveProgress(){
+  if(!S.name) return;
+  const data={
+    name:S.name,
+    l1Complete:S.l1Complete, l2Complete:S.l2Complete, l3Complete:S.l3Complete,
+    l1Score:S.l1Score, l1Total:S.l1Total, l1Corrected:S.l1Corrected,
+    l2Score:S.l2Score, l2Total:S.l2Total, l2Corrected:S.l2Corrected,
+    l3Score:S.l3Score, l3Total:S.l3Total, l3Corrected:S.l3Corrected,
+    currentLevel:S.currentLevel,
+    questionsDone:S.questionsDone,
+    score:S.score, total:S.total, corrected:S.corrected,
+    difficulty:S.difficulty,
+  };
+  localStorage.setItem('em_progress_'+S.name.toLowerCase().replace(/\s/g,'_'), JSON.stringify(data));
+}
+
+function loadProgress(name){
+  const key='em_progress_'+name.toLowerCase().replace(/\s/g,'_');
+  const raw=localStorage.getItem(key);
+  if(!raw) return false;
+  try{
+    const d=JSON.parse(raw);
+    S.l1Complete=d.l1Complete||false;
+    S.l2Complete=d.l2Complete||false;
+    S.l3Complete=d.l3Complete||false;
+    S.l1Score=d.l1Score||0; S.l1Total=d.l1Total||0; S.l1Corrected=d.l1Corrected||0;
+    S.l2Score=d.l2Score||0; S.l2Total=d.l2Total||0; S.l2Corrected=d.l2Corrected||0;
+    S.l3Score=d.l3Score||0; S.l3Total=d.l3Total||0; S.l3Corrected=d.l3Corrected||0;
+    return true;
+  } catch(e){ return false; }
+}
+
+function updateLevelCards(){
+  if(S.l1Complete){
+    document.getElementById('badge-l1').textContent='Done';
+    document.getElementById('badge-l1').className='level-badge badge-done';
+    earnPatch(1);
+  }
+  if(S.l2Complete){
+    document.getElementById('badge-l2').textContent='Done';
+    document.getElementById('badge-l2').className='level-badge badge-done';
+    earnPatch(2);
+  }
+  if(S.l3Complete){
+    document.getElementById('badge-l3').textContent='Done';
+    document.getElementById('badge-l3').className='level-badge badge-done';
+    earnPatch(3);
+  }
+  if(S.l1Complete){
+    document.getElementById('card-l2').classList.remove('locked');
+    document.getElementById('badge-l2').textContent=S.l2Complete?'Done':'Ready';
+    document.getElementById('badge-l2').className=S.l2Complete?'level-badge badge-done':'level-badge badge-ready';
+  }
+  if(S.l2Complete){
+    document.getElementById('card-l3').classList.remove('locked');
+    document.getElementById('badge-l3').textContent=S.l3Complete?'Done':'Ready';
+    document.getElementById('badge-l3').className=S.l3Complete?'level-badge badge-done':'level-badge badge-ready';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PIN-PROTECTED TEACHER ACCESS
+// ═══════════════════════════════════════════════════════
+const TEACHER_PIN = '6622241';
+const TESTER_PIN  = '2241';
+let pinEntry = '';
+
+function showPinPrompt(){
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-overlay').classList.add('show');
+}
+
+function pinKey(k){
+  if(k === 'cancel'){
+    pinEntry = '';
+    document.getElementById('pin-overlay').classList.remove('show');
+    return;
+  }
+  if(k === 'del'){
+    pinEntry = pinEntry.slice(0,-1);
+    updatePinDots();
+    return;
+  }
+  // Allow up to the longer of the two PINs
+  if(pinEntry.length >= Math.max(TEACHER_PIN.length, TESTER_PIN.length)) return;
+  pinEntry += k;
+  updatePinDots();
+
+  // Check tester PIN as soon as it matches length
+  if(pinEntry.length === TESTER_PIN.length){
+    setTimeout(()=>{
+      if(pinEntry === TESTER_PIN){
+        document.getElementById('pin-overlay').classList.remove('show');
+        pinEntry = ''; updatePinDots();
+        unlockAllLevels();
+        return;
+      }
+    }, 200);
+  }
+  // Check teacher PIN
+  if(pinEntry.length === TEACHER_PIN.length){
+    setTimeout(()=>{
+      if(pinEntry === TEACHER_PIN){
+        document.getElementById('pin-overlay').classList.remove('show');
+        pinEntry = ''; updatePinDots();
+        openDashboard();
+      } else {
+        document.getElementById('pin-error').textContent = 'Incorrect PIN';
+        pinEntry = ''; updatePinDots();
+      }
+    }, 200);
+  }
+}
+
+function unlockAllLevels(){
+  if(!S.name) S.name = 'Tester';
+  S.l1Complete = true;
+  S.l2Complete = true;
+  updateLevelCards();
+  document.getElementById('pin-overlay').classList.remove('show');
+  show('screen-levels');
+  // Show a brief toast on the level select screen
+  setTimeout(()=>{
+    const toast=document.createElement('div');
+    toast.textContent='🔓 All levels unlocked';
+    toast.style.cssText='position:fixed;bottom:32px;left:50%;transform:translateX(-50%);'+
+      'background:rgba(79,142,247,.15);border:1px solid var(--accent);color:var(--accent);'+
+      'font-family:var(--mono);font-size:.82rem;padding:10px 20px;border-radius:20px;'+
+      'z-index:50;pointer-events:none;transition:opacity .4s;';
+    document.body.appendChild(toast);
+    setTimeout(()=>{ toast.style.opacity='0'; setTimeout(()=>toast.remove(),400); },2200);
+  }, 300);
+}
+
+function updatePinDots(){
+  const dots = document.getElementById('pin-dots').querySelectorAll('span');
+  dots.forEach((d,i) => d.classList.toggle('filled', i < pinEntry.length));
+}
+
+function openDashboard(){
+  const records = JSON.parse(localStorage.getItem('em_records')||'[]');
+  const el = document.getElementById('dash-content');
+  if(!records.length){
+    el.innerHTML='<div class="dash-empty">No student records yet.<br><span style="font-size:.75rem;">Records appear here after a student completes both levels.</span></div>';
+  } else {
+    let rows = records.map(r=>`
+      <tr>
+        <td>${r.name}</td>
+        <td>${r.l1||'—'}</td>
+        <td>${r.l2||'—'}</td>
+        <td>${r.l3||'—'}</td>
+        <td>${r.overall||'—'}</td>
+        <td style="color:var(--amber)">${r.corrected||0}</td>
+        <td style="color:var(--accent);letter-spacing:1px;">${r.code}</td>
+      </tr>`).join('');
+    el.innerHTML=`<table class="dash-table">
+      <tr><th>Name</th><th>L1</th><th>L2</th><th>L3</th><th>Overall</th><th>Corrected</th><th>Code</th></tr>
+      ${rows}</table>`;
+  }
+  show('screen-teacher');
+}
+
+function clearDashboard(){
+  if(confirm('Clear all student records?')){
+    localStorage.removeItem('em_records');
+    openDashboard();
+  }
+}
+
+function saveRecord(data){
+  const records = JSON.parse(localStorage.getItem('em_records')||'[]');
+  const idx = records.findIndex(r=>r.name.toLowerCase()===data.name.toLowerCase());
+  if(idx>=0) records[idx]=data; else records.push(data);
+  localStorage.setItem('em_records',JSON.stringify(records));
+}
+// ═══════════════════════════════════════════════════════
+//  TUTORIAL
+// ═══════════════════════════════════════════════════════
+const TUTORIALS = {
+  1: [
+    {
+      title:'Mission goal',
+      html:`<p class="tutorial-step" style="font-size:1rem;line-height:1.8;">By the end of this level:<br><br>
+            <strong style="color:var(--accent);">I can show both products before I simplify.</strong><br><br>
+            That means: when I see something like <span class="math"><span class="out">2</span>(x + 3)</span>, I know that the 2 multiplies <em>everything</em> inside — not just the first term.</p>`
+    },
+    {
+      title:'What does expansion mean?',
+      html:`<p class="tutorial-step">When you see <span class="math"><span class="out">2</span>(x + 3)</span>, it means <strong>everything inside the bracket is being multiplied by the number outside.</strong></p>
+            <p class="tutorial-step">Think of it this way: two friends each receive <strong>(x + 3)</strong> dollars. That's <strong>2 lots of x</strong> and <strong>2 lots of 3</strong>.</p>`
+    },
+    {
+      title:'Show the multiplication',
+      html:`<p class="tutorial-step">Step 1 is to <strong>show what is being multiplied by what</strong>.</p>
+            <p class="tutorial-step"><span class="math"><span class="out">2</span>(x + 3)</span> becomes:<br><br>
+            <span class="math"><span class="out">2</span> × <span class="xpart">x</span> &nbsp;+&nbsp; <span class="out">2</span> × <span class="cpart">3</span></span></p>
+            <p class="tutorial-step" style="margin-top:8px;">You will drag tiles into the blanks to show this.</p>`
+    },
+    {
+      title:'Then simplify',
+      html:`<p class="tutorial-step">Step 2 is to <strong>simplify</strong> your multiplication into a clean expression.</p>
+            <p class="tutorial-step"><span class="math"><span class="out">2</span> × <span class="xpart">x</span> + <span class="out">2</span> × <span class="cpart">3</span></span><br><br>
+            = &nbsp;<span class="math"><span class="xpart">2x</span> + <span class="cpart">6</span></span></p>
+            <p class="tutorial-step" style="margin-top:8px;">You will type this into the answer box using the keypad.</p>`
+    },
+  ],
+  2: [
+    {
+      title:'Mission goal',
+      html:`<p class="tutorial-step" style="font-size:1rem;line-height:1.8;">By the end of this level:<br><br>
+            <strong style="color:var(--accent);">I can replace x correctly and then work out the expression.</strong><br><br>
+            That means: when I am given a value for x, I substitute it first — then I evaluate. Not at the same time.</p>`
+    },
+    {
+      title:'What is substitution?',
+      html:`<p class="tutorial-step"><strong>Substitution</strong> means replacing x with a given number, then calculating the result.</p>
+            <p class="tutorial-step">If <span class="math">x = 3</span>, then <span class="math">2x + 5</span> becomes <span class="math">2(3) + 5 = 6 + 5 = 11</span>.</p>`
+    },
+    {
+      title:'Replace, then calculate',
+      html:`<p class="tutorial-step">The process is always the same:<br><br>
+            <strong>1.</strong> Replace every x with the given number.<br>
+            <strong>2.</strong> Work out the arithmetic that is left.</p>
+            <p class="tutorial-step">Write it out if you need to. Do not try to do it all in your head at once.</p>`
+    },
+  ],
+  3: [
+    {
+      title:'Mission goal',
+      html:`<p class="tutorial-step" style="font-size:1rem;line-height:1.8;">By the end of this level:<br><br>
+            <strong style="color:var(--accent);">I can test both sides and decide whether the equation is true.</strong><br><br>
+            That means: the = sign means <em>is</em>. I will find out whether a given value of x makes both sides equal.</p>`
+    },
+    {
+      title:'x is unknown — but not any number will do',
+      html:`<p class="tutorial-step">x is an unknown number for now — but it can't just be any old number. <strong>Not just any value will work.</strong></p>
+            <p class="tutorial-step">An equation has two sides connected by an = sign. The = sign means <strong>"is"</strong>. Both sides must be equal — the same value.</p>`
+    },
+    {
+      title:'Only one value makes it true',
+      html:`<p class="tutorial-step">Only one value of x makes the left side equal to the right side.</p>
+            <p class="tutorial-step">In this level, we are going to <strong>test</strong> values of x to see if they work. You will be given a value to try.</p>`
+    },
+    {
+      title:'Here is how we will test it',
+      html:`<p class="tutorial-step">We will <strong>substitute</strong> the given value wherever we see x. Then we calculate the left side. Then we check if it equals the right side.</p>
+            <p class="tutorial-step">If both sides are equal — the value <strong>works</strong>. The = sign is telling the truth.<br>
+            If they are not equal — the value <strong>cannot be x</strong>. The = sign would be lying.</p>`
+    },
+  ]
+};
+
+let tutStep=0, tutLevel=1;
+function beginLevel(lvl){
+  if(lvl===2 && !S.l1Complete) return;
+  if(lvl===3 && !S.l2Complete) return;
+  tutLevel=lvl; tutStep=0;
+  buildTutorial();
+  show('screen-tutorial');
+}
+
+function buildTutorial(){
+  const steps = TUTORIALS[tutLevel];
+  const card = document.getElementById('tutorial-card');
+  const s = steps[tutStep];
+  card.innerHTML=`<div class="tutorial-title">${s.title}</div>${s.html}`;
+  // dots
+  const dots = document.getElementById('tutorial-dots');
+  dots.innerHTML=steps.map((_,i)=>`<div class="tdot${i===tutStep?' on':''}"></div>`).join('');
+  // button
+  const btn = document.getElementById('tut-btn');
+  btn.textContent = tutStep < steps.length-1 ? 'Next →' : 'Start Level →';
+}
+
+function tutNext(){
+  const steps = TUTORIALS[tutLevel];
+  if(tutStep < steps.length-1){ tutStep++; buildTutorial(); }
+  else endTutorial();
+}
+
+function endTutorial(){ startLevel(tutLevel); }
+
+// ═══════════════════════════════════════════════════════
+//  LEVEL START
+// ═══════════════════════════════════════════════════════
+function startGame(){
+  const name = document.getElementById('player-name').value.trim();
+  if(!name){ document.getElementById('player-name').focus(); return; }
+  S.name=name;
+  document.getElementById('greeting-name').textContent=name;
+  loadProgress(name);
+  updateLevelCards();
+  show('screen-levels');
+}
+
+function startLevel(lvl){
+  S.currentLevel=lvl;
+  S.questionsPerLevel = lvl===3 ? 4 : 10;
+  S.score=0; S.total=0; S.streak=0; S.wrongStreak=0;
+  S.difficulty=1; S.questionsDone=0; S.hintIndex=0;
+  S.speedRoundActive=false; S.speedOfferShown=false;
+  S.doublePhase=0; S.doubleResults=[];
+  S.redoActive=false; S.savedQ=null;
+  S.substDragCorrect=0;
+  S.verifyIntroShown=false;
+  const labels={1:'Expansion',2:'Substitution',3:'Does It Work?'};
+  document.getElementById('game-level-label').textContent=`Level ${lvl} — ${labels[lvl]||''}`;
+  buildSegProgress();
+  show('screen-game');
+  buildKeypad();
+  generateQuestion();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PROGRESS BAR
+// ═══════════════════════════════════════════════════════
+function buildSegProgress(){
+  const bar = document.getElementById('seg-progress');
+  bar.innerHTML='';
+  for(let i=0;i<S.questionsPerLevel;i++){
+    const d=document.createElement('div');
+    d.className='seg'; d.id=`seg-${i}`; bar.appendChild(d);
+  }
+}
+function updateSegProgress(){
+  for(let i=0;i<S.questionsPerLevel;i++){
+    const el=document.getElementById(`seg-${i}`);
+    if(!el) continue;
+    if(i<S.questionsDone-1) el.className='seg done';
+    else if(i===S.questionsDone-1) el.className='seg active';
+    else el.className='seg';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DIFFICULTY
+// ═══════════════════════════════════════════════════════
+function updateDifficulty(){
+  if(S.streak>=3 && S.difficulty<3){ S.difficulty++; S.streak=0; soundStreak(); }
+  if(S.wrongStreak>=2 && S.difficulty>1){ S.difficulty--; S.wrongStreak=0; }
+  document.getElementById('diff-pips').querySelectorAll('.pip')
+    .forEach((p,i)=>p.classList.toggle('on',i<S.difficulty));
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATORS — LEVEL 1
+// ═══════════════════════════════════════════════════════
+function ri(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pickOuter(){ return S.difficulty===1?ri(2,5):S.difficulty===2?ri(2,8):ri(2,10); }
+function pickConst(neg){ return S.difficulty===1?ri(1,8):S.difficulty===2?(neg?ri(-6,8):ri(1,10)):ri(-9,9); }
+function pickXC(){ return S.difficulty===1?1:S.difficulty===2?(Math.random()<.4?ri(2,3):1):(Math.random()<.5?ri(2,4):1); }
+
+function genExpansion(){
+  const types = S.difficulty===1?['simple','simple','neg-const']:
+                S.difficulty===2?['simple','neg-const','neg-const','neg-outer','double']:
+                ['simple','neg-const','neg-outer','neg-outer','double','double'];
+  const type=types[ri(0,types.length-1)];
+
+  if(type==='double') return genDouble();
+
+  const outer = type==='neg-outer' ? -pickOuter() : pickOuter();
+  const xc = pickXC();
+  let c = pickConst(type!=='simple');
+  if(c===0) c=1;
+
+  const termX=outer*xc, termC=outer*c;
+  const cSign=c>=0?'+':'−';
+  const xStr=xc===1?'x':`${xc}x`;
+  const outerStr=outer<0?`−${Math.abs(outer)}`:`${outer}`;
+  const outerTileVal=outer<0?`−${Math.abs(outer)}`:`${String(outer)}`;
+
+  const expr=`${outerStr}(${xStr} ${cSign} ${Math.abs(c)})`;
+  const answer=formatExpr(termX,termC);
+  const workLines=[
+    `${outerStr} × ${xStr} = ${fmtTermFirst(termX)}`,
+    `${outerStr} × ${outer<0?'('+c+')':Math.abs(c)} = ${termC}`,
+    `Answer: ${answer}`
+  ];
+
+  // Constant tile uses its actual signed value so negatives appear correctly
+  const cTileVal = c < 0 ? `−${Math.abs(c)}` : String(c);
+  const tiles=shuffleArr([
+    {val:outerTileVal,id:'a'},{val:xStr,id:'b'},
+    {val:outerTileVal,id:'c'},{val:cTileVal,id:'d'},
+    {val:String(Math.abs(outer)+1),id:'e'},{val:String(Math.abs(c)+1),id:'f'},
+  ]);
+
+  return {type,expr,answer,outer,xc,c,termX,termC,workLines,tiles,outerTileVal,xStr,cTileVal};
+}
+
+function genDouble(){
+  const o1=pickOuter(), xc1=pickXC(), c1=pickConst(S.difficulty>1)||1;
+  const o2=pickOuter(), xc2=pickXC(), c2=pickConst(S.difficulty>1)||1;
+  const t1x=o1*xc1, t1c=o1*c1, t2x=o2*xc2, t2c=o2*c2;
+  const totalX=t1x+t2x, totalC=t1c+t2c;
+  const xs1=xc1===1?'x':`${xc1}x`, xs2=xc2===1?'x':`${xc2}x`;
+  const cs1=c1>=0?'+':'−', cs2=c2>=0?'+':'−';
+  const expr=`${o1}(${xs1} ${cs1} ${Math.abs(c1)}) + ${o2}(${xs2} ${cs2} ${Math.abs(c2)})`;
+  const ans1=formatExpr(t1x,t1c), ans2=formatExpr(t2x,t2c), ansTotal=formatExpr(totalX,totalC);
+
+  // Signed constant tile values — preserve the negative sign
+  const ctv1=c1<0?`−${Math.abs(c1)}`:String(c1);
+  const ctv2=c2<0?`−${Math.abs(c2)}`:String(c2);
+
+  const tiles1=shuffleArr([
+    {val:String(o1),id:'a'},{val:xs1,id:'b'},
+    {val:String(o1),id:'c'},{val:ctv1,id:'d'},
+    {val:String(o1+1),id:'e'},{val:String(Math.abs(c1)+1),id:'f'},
+  ]);
+  const tiles2=shuffleArr([
+    {val:String(o2),id:'a'},{val:xs2,id:'b'},
+    {val:String(o2),id:'c'},{val:ctv2,id:'d'},
+    {val:String(o2+1),id:'e'},{val:String(Math.abs(c2)+1),id:'f'},
+  ]);
+
+  // Worked lines with correct signed values
+  const wl1c = c1<0 ? `(${c1})` : String(c1);
+  const wl2c = c2<0 ? `(${c2})` : String(c2);
+
+  return {type:'double',expr,
+    parts:[
+      {outer:o1,xc:xc1,c:c1,termX:t1x,termC:t1c,xStr:xs1,
+       outerTileVal:String(o1),cTileVal:ctv1,tiles:tiles1,answer:ans1,
+       workLines:[`${o1} × ${xs1} = ${fmtTermFirst(t1x)}`,`${o1} × ${wl1c} = ${t1c}`,`Result: ${ans1}`]},
+      {outer:o2,xc:xc2,c:c2,termX:t2x,termC:t2c,xStr:xs2,
+       outerTileVal:String(o2),cTileVal:ctv2,tiles:tiles2,answer:ans2,
+       workLines:[`${o2} × ${xs2} = ${fmtTermFirst(t2x)}`,`${o2} × ${wl2c} = ${t2c}`,`Result: ${ans2}`]},
+    ],
+    collect:{t1x,t1c,t2x,t2c,totalX,totalC,ans1,ans2,answer:ansTotal},
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATORS — LEVEL 2
+// ═══════════════════════════════════════════════════════
+function genSubstitution(){
+  const progress=S.questionsDone/S.questionsPerLevel;
+  let subType = progress<.4?'linear':(Math.random()<.5?'linear':'variety');
+  const xv=ri(1,S.difficulty===1?5:S.difficulty===2?8:10);
+  if(subType==='linear'){
+    const a=ri(1,5),b=ri(1,9),ans=a*xv+b;
+    const xTerm=a===1?'x':`${a}x`;
+    return{subType:'linear',xVal:xv,a,b,ans,expr:`${xTerm} + ${b}`,
+      prompt:`Find the value when x = ${xv}`,
+      workLine:`${a}(${xv}) + ${b}\n= ${a*xv} + ${b}\n= ${ans}`};
+  }
+  if(subType==='variety'){
+    const vs=['bracket','fraction','square'];
+    const v=vs[ri(0,vs.length-1)];
+    if(v==='bracket'){
+      const a=ri(2,5),b=ri(1,6),ans=a*(xv+b);
+      return{subType:'variety-bracket',xVal:xv,a,b,ans,expr:`${a}(x + ${b})`,
+        prompt:`Find the value when x = ${xv}`,
+        workLine:`${a}(${xv} + ${b})\n= ${a}(${xv+b})\n= ${ans}`};
+    }
+    if(v==='fraction'){
+      const d=ri(2,4),sx=xv*d,b=ri(1,5),ans=sx/d+b;
+      const fracHTML=`<span class="vfrac"><span class="num">x</span><span class="den">${d}</span></span> + ${b}`;
+      const fracSubst=`<span class="vfrac"><span class="num">${sx}</span><span class="den">${d}</span></span> + ${b}`;
+      return{subType:'variety-fraction',xVal:sx,denom:d,b,ans,
+        expr:fracHTML, exprPlain:`x÷${d} + ${b}`,
+        prompt:`Find the value when x = ${sx}`,
+        workLine:`${sx} ÷ ${d} + ${b}\n= ${sx/d} + ${b}\n= ${ans}`};
+    }
+    const b=ri(1,5),ans=xv*xv+b;
+    return{subType:'variety-square',xVal:xv,b,ans,expr:`x<sup>2</sup> + ${b}`,
+      prompt:`Find the value when x = ${xv}`,
+      workLine:`(${xv})² + ${b}\n= ${xv*xv} + ${b}\n= ${ans}`};
+  }
+  // fallback to linear
+  const a=ri(1,5),b=ri(1,9),ans=a*xv+b;
+  const xTerm=a===1?'x':`${a}x`;
+  return{subType:'linear',xVal:xv,a,b,ans,expr:`${xTerm} + ${b}`,
+    prompt:`Find the value when x = ${xv}`,
+    workLine:`${a}(${xv}) + ${b}\n= ${a*xv} + ${b}\n= ${ans}`};
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATOR — LEVEL 3: VERIFY
+// ═══════════════════════════════════════════════════════
+function genVerify(){
+  const xv=ri(1,S.difficulty===1?6:9);
+  const a=ri(1,4), b=ri(1,8);
+  const lhs=a*xv+b;
+  const trueEq=Math.random()<0.5;
+  const rhs=trueEq?lhs:lhs+ri(1,5);
+  const xTerm=a===1?'x':`${a}x`;
+  return{
+    subType:'verify', xVal:xv, a, b, lhs, rhs, correct:trueEq,
+    expr:`${xTerm} + ${b}`, rhs,
+    prompt:`If x = ${xv}, is the left side equal to the right side?`,
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════
+function generateQuestion(){
+  clearFeedback();
+  S.hintIndex=0; S.awaitingNext=false;
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('btn-submit').disabled=false;
+  document.getElementById('btn-submit').style.display='';
+  document.getElementById('btn-hint').style.display='';
+  document.getElementById('keypad').style.display='';
+  updateScoreDisplay();
+  updateSegProgress();
+  setTimeout(pulseCardBorder, 80);
+
+  if(S.currentLevel===1){
+    if(!S.currentQ || S.currentQ.type!=='double' || S.doublePhase===0){
+      S.currentQ=genExpansion();
+      S.doublePhase=0; S.doubleResults=[];
+    }
+    if(S.currentQ.type==='double') renderDoublePart(S.currentQ);
+    else renderExpansion(S.currentQ);
+  } else if(S.currentLevel===2){
+    S.currentQ=genSubstitution();
+    renderSubstitution(S.currentQ);
+  } else {
+    S.currentQ=genVerify();
+    renderVerify(S.currentQ);
+  }
+}
+
+function renderExpansion(q){
+  document.getElementById('q-prompt').textContent='Expand the expression';
+
+  // For first 4 questions show the animated arrows; afterwards plain expression
+  const showArrows = S.questionsDone < 4 && q.type !== 'double';
+  if(showArrows){
+    renderExprWithArrows(q);
+  } else {
+    document.getElementById('q-expr').innerHTML=`<span class="hi">${q.expr}</span>`;
+  }
+
+  const body=document.getElementById('q-body');
+  body.innerHTML='';
+  appendDragStep(body,q,q.c>=0?'+':'−');
+  appendSimplifyStep(body,`${q.expr} =`,'',q);
+}
+
+// Render the expression with a canvas overlay and animated arrows
+function renderExprWithArrows(q){
+  const exprEl=document.getElementById('q-expr');
+  // Build colour-coded expression inside a positioned wrapper
+  const outerStr=q.outer<0?`−${Math.abs(q.outer)}`:`${q.outer}`;
+  const cSign=q.c>=0?'+':'−';
+  const xStr=q.xc===1?'x':`${q.xc}x`;
+  exprEl.innerHTML=`
+    <div class="q-expr-wrap" id="arrow-wrap">
+      <canvas id="arrow-cv"></canvas>
+      <div class="q-expr-text">
+        <span id="aw-outer" style="color:#f59e0b;">${outerStr}</span><span style="color:var(--accent);">(</span><span id="aw-t1" style="color:#34d399;">${xStr}</span><span style="color:var(--muted);"> ${cSign} </span><span id="aw-t2" style="color:#f87171;">${Math.abs(q.c)}</span><span style="color:var(--accent);">)</span>
+      </div>
+    </div>`;
+  // Slight delay so DOM is painted before we measure
+  setTimeout(()=>playExpansionArrows(),120);
+}
+
+function playExpansionArrows(){
+  const wrap=document.getElementById('arrow-wrap');
+  const cv=document.getElementById('arrow-cv');
+  const outerEl=document.getElementById('aw-outer');
+  const t1El=document.getElementById('aw-t1');
+  const t2El=document.getElementById('aw-t2');
+  if(!wrap||!cv||!outerEl||!t1El||!t2El) return;
+
+  const wr=wrap.getBoundingClientRect();
+  cv.width=wr.width; cv.height=wr.height;
+  const ctx=cv.getContext('2d');
+
+  function centre(el){
+    const er=el.getBoundingClientRect();
+    const cr=cv.getBoundingClientRect();
+    return {
+      x: er.left-cr.left+er.width/2,
+      y: er.top -cr.top +er.height/2,
+      top: er.top-cr.top,
+    };
+  }
+
+  function bezierPt(t,p0,p1,p2){
+    const m=1-t;
+    return {x:m*m*p0.x+2*m*t*p1.x+t*t*p2.x, y:m*m*p0.y+2*m*t*p1.y+t*t*p2.y};
+  }
+
+  function arrowhead(p0,p1,p2,color,size=10){
+    const pa=bezierPt(0.96,p0,p1,p2);
+    const pb=bezierPt(1,p0,p1,p2);
+    const angle=Math.atan2(pb.y-pa.y,pb.x-pa.x);
+    ctx.save();
+    ctx.translate(pb.x,pb.y); ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(-size,-size*0.42);
+    ctx.lineTo(-size*0.45,0); ctx.lineTo(-size,size*0.42);
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    ctx.restore();
+  }
+
+  function dot(p,color){
+    ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.fill();
+  }
+
+  function animArrow(p0,p1,p2,color,duration,delay,onDone){
+    let start=null;
+    function step(ts){
+      if(!start) start=ts+delay;
+      const el=ts-start;
+      if(el<0){requestAnimationFrame(step);return;}
+      const t=Math.min(el/duration,1);
+      const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      ctx.save();
+      ctx.strokeStyle=color; ctx.lineWidth=2.8; ctx.setLineDash([7,5]);
+      ctx.beginPath();
+      let first=true;
+      for(let i=0;i<=Math.round(100*e);i++){
+        const pt=bezierPt(i/100,p0,p1,p2);
+        if(first){ctx.moveTo(pt.x,pt.y);first=false;}
+        else ctx.lineTo(pt.x,pt.y);
+      }
+      ctx.stroke(); ctx.restore();
+      dot(p0,color);
+      if(e>=1){arrowhead(p0,p1,p2,color);if(onDone)onDone();return;}
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const o=centre(outerEl), t1=centre(t1El), t2=centre(t2El);
+  const p0a={x:o.x,y:o.top+4};
+  const p2a={x:t1.x,y:t1.top+4};
+  const p1a={x:(p0a.x+p2a.x)/2, y:Math.min(p0a.y,p2a.y)-44};
+
+  const p0b={x:o.x,y:o.top};
+  const p2b={x:t2.x,y:t2.top+4};
+  const p1b={x:(p0b.x+p2b.x)/2, y:Math.min(p0b.y,p2b.y)-76};
+
+  animArrow(p0a,p1a,p2a,'#34d399',580,0,null);
+  animArrow(p0b,p1b,p2b,'#f87171',720,100,null);
+}
+
+// Called from buildWorked to show arrows in wrong-answer feedback
+function showWorkedArrows(container, outerStr, xStr, c){
+  const sign = c >= 0 ? ' + ' : ' − ';
+  const absC = Math.abs(c);
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;justify-content:center;margin-bottom:14px;';
+  wrap.innerHTML=`
+    <div class="q-expr-wrap" id="worked-arrow-wrap" style="padding:70px 40px 12px 40px;">
+      <canvas id="worked-arrow-cv"></canvas>
+      <div class="q-expr-text" style="font-size:1.3rem;">
+        <span id="waw-outer" style="color:#f59e0b;">${outerStr}</span><span style="color:var(--accent);">(</span><span id="waw-t1" style="color:#34d399;">${xStr}</span><span style="color:var(--muted);">${sign}</span><span id="waw-t2" style="color:#f87171;">${absC}</span><span style="color:var(--accent);">)</span>
+      </div>
+    </div>`;
+  container.appendChild(wrap);
+  setTimeout(()=>{
+    const w=document.getElementById('worked-arrow-wrap');
+    const cv=document.getElementById('worked-arrow-cv');
+    if(!w||!cv) return;
+    const wr=w.getBoundingClientRect();
+    cv.width=wr.width; cv.height=wr.height;
+    // reuse playExpansionArrows logic with these ids
+    const ctx2=cv.getContext('2d');
+    function c2(el){
+      const er=el.getBoundingClientRect();
+      const cr=cv.getBoundingClientRect();
+      return {x:er.left-cr.left+er.width/2,y:er.top-cr.top+er.height/2,top:er.top-cr.top};
+    }
+    function bp(t,p0,p1,p2){const m=1-t;return {x:m*m*p0.x+2*m*t*p1.x+t*t*p2.x,y:m*m*p0.y+2*m*t*p1.y+t*t*p2.y};}
+    function ah(p0,p1,p2,color,size=9){
+      const pa=bp(0.96,p0,p1,p2),pb=bp(1,p0,p1,p2);
+      const angle=Math.atan2(pb.y-pa.y,pb.x-pa.x);
+      ctx2.save();ctx2.translate(pb.x,pb.y);ctx2.rotate(angle);
+      ctx2.beginPath();ctx2.moveTo(0,0);ctx2.lineTo(-size,-size*0.42);ctx2.lineTo(-size*0.45,0);ctx2.lineTo(-size,size*0.42);
+      ctx2.closePath();ctx2.fillStyle=color;ctx2.fill();ctx2.restore();
+    }
+    function dt(p,color){ctx2.beginPath();ctx2.arc(p.x,p.y,4,0,Math.PI*2);ctx2.fillStyle=color;ctx2.fill();}
+    function aa(p0,p1,p2,color,dur,delay,done){
+      let start=null;
+      function step(ts){
+        if(!start)start=ts+delay;
+        const el=ts-start;if(el<0){requestAnimationFrame(step);return;}
+        const t=Math.min(el/dur,1),e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+        ctx2.save();ctx2.strokeStyle=color;ctx2.lineWidth=2.5;ctx2.setLineDash([6,5]);
+        ctx2.beginPath();let first=true;
+        for(let i=0;i<=Math.round(100*e);i++){const pt=bp(i/100,p0,p1,p2);if(first){ctx2.moveTo(pt.x,pt.y);first=false;}else ctx2.lineTo(pt.x,pt.y);}
+        ctx2.stroke();ctx2.restore();dt(p0,color);
+        if(e>=1){ah(p0,p1,p2,color);if(done)done();return;}
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    const o=c2(document.getElementById('waw-outer'));
+    const t1=c2(document.getElementById('waw-t1'));
+    const t2=c2(document.getElementById('waw-t2'));
+    const p0a={x:o.x,y:o.top+4},p2a={x:t1.x,y:t1.top+4},p1a={x:(p0a.x+p2a.x)/2,y:Math.min(p0a.y,p2a.y)-40};
+    const p0b={x:o.x,y:o.top},p2b={x:t2.x,y:t2.top+4},p1b={x:(p0b.x+p2b.x)/2,y:Math.min(p0b.y,p2b.y)-68};
+    aa(p0a,p1a,p2a,'#34d399',580,0,null);
+    aa(p0b,p1b,p2b,'#f87171',720,100,null);
+  },150);
+}
+
+function renderDoublePart(q){
+  const part=q.parts[S.doublePhase];
+  if(S.doublePhase<2){
+    const partLabel=['First bracket','Second bracket'][S.doublePhase];
+    document.getElementById('q-prompt').textContent=`Expand and simplify — ${partLabel}`;
+    document.getElementById('q-expr').innerHTML=`<span class="hi">${q.expr}</span>`;
+    const body=document.getElementById('q-body');
+    body.innerHTML='';
+    // Show which part we're working on
+    const which=document.createElement('div');
+    which.style.cssText='font-family:var(--mono);font-size:.85rem;color:var(--muted);margin-bottom:10px;';
+    const bracketExprs=[q.parts[0].outer+'('+q.parts[0].xStr+(q.parts[0].c>=0?' + ':' − ')+Math.abs(q.parts[0].c)+')',
+                        q.parts[1].outer+'('+q.parts[1].xStr+(q.parts[1].c>=0?' + ':' − ')+Math.abs(q.parts[1].c)+')'];
+    which.innerHTML=`Working on: <span style="color:var(--accent)">${bracketExprs[S.doublePhase]}</span>`;
+    body.appendChild(which);
+    appendDragStep(body,part,part.c>=0?'+':'−');
+    appendSimplifyStep(body,`${bracketExprs[S.doublePhase]} =`,'',part);
+  } else {
+    renderCollect(q);
+  }
+}
+
+function renderCollect(q){
+  const c=q.collect;
+  document.getElementById('q-prompt').textContent='Now collect like terms';
+  document.getElementById('q-expr').innerHTML=`<span class="hi">${q.expr}</span>`;
+  const body=document.getElementById('q-body');
+  body.innerHTML='';
+
+  const label=document.createElement('div');
+  label.className='step-label';
+  label.textContent='Your two results — combine them';
+  body.appendChild(label);
+
+  // Show the vertical collect layout
+  const box=document.createElement('div');
+  box.className='collect-box';
+  box.innerHTML=`
+    <div class="collect-row">
+      <span style="color:var(--muted);font-size:.9rem;min-width:20px;">  </span>
+      <span class="collect-val"><span class="xc">${fmtTermFirst(c.t1x)}</span>${fmtC(c.t1c)}</span>
+      <span style="color:var(--muted);font-size:.8rem;margin-left:auto;">(from first bracket)</span>
+    </div>
+    <div class="collect-row">
+      <span style="color:var(--green);min-width:20px;">+</span>
+      <span class="collect-val"><span class="xc">${fmtTermFirst(c.t2x)}</span>${fmtC(c.t2c)}</span>
+      <span style="color:var(--muted);font-size:.8rem;margin-left:auto;">(from second bracket)</span>
+    </div>
+    <div class="collect-row result-row">
+      <span style="min-width:20px;">=</span>
+      <span style="color:var(--muted)">x terms: <span style="color:var(--accent)">${c.t1x}x + ${c.t2x}x = ?</span> &nbsp;|&nbsp; numbers: <span style="color:var(--green)">${c.t1c} + ${c.t2c} = ?</span></span>
+    </div>`;
+  body.appendChild(box);
+
+  const label2=document.createElement('div');
+  label2.className='step-label';
+  label2.style.marginTop='8px';
+  label2.textContent='Write the simplified answer';
+  body.appendChild(label2);
+
+  const ansRow=document.createElement('div');
+  ansRow.className='answer-row';
+  ansRow.innerHTML=`<span class="answer-prefix">= </span>
+    <input class="answer-input" id="main-input" type="text" placeholder="e.g. 5x + 29" autocomplete="off" readonly/>`;
+  body.appendChild(ansRow);
+}
+
+function appendDragStep(body,q,sign){
+  const lbl=document.createElement('div');
+  lbl.className='step-label';
+  lbl.textContent='Step 1 — Show the multiplication';
+  body.appendChild(lbl);
+
+  const tmpl=document.createElement('div');
+  tmpl.className='expand-template';
+  // Always show + between pairs — the sign is carried by the constant tile itself
+  tmpl.innerHTML=`
+    <div class="drop-zone" id="dz0" ondragover="dzOver(event,'dz0')" ondragleave="dzLeave('dz0')" ondrop="dzDrop(event,'dz0')" onclick="dzTap('dz0')"></div>
+    <span class="op-text op-multiply">×</span>
+    <div class="drop-zone" id="dz1" ondragover="dzOver(event,'dz1')" ondragleave="dzLeave('dz1')" ondrop="dzDrop(event,'dz1')" onclick="dzTap('dz1')"></div>
+    <span class="op-text op-add">+</span>
+    <div class="drop-zone" id="dz2" ondragover="dzOver(event,'dz2')" ondragleave="dzLeave('dz2')" ondrop="dzDrop(event,'dz2')" onclick="dzTap('dz2')"></div>
+    <span class="op-text op-multiply">×</span>
+    <div class="drop-zone" id="dz3" ondragover="dzOver(event,'dz3')" ondragleave="dzLeave('dz3')" ondrop="dzDrop(event,'dz3')" onclick="dzTap('dz3')"></div>`;
+  body.appendChild(tmpl);
+
+  const blbl=document.createElement('div');
+  blbl.className='step-label';
+  blbl.textContent='Drag or tap a tile';
+  body.appendChild(blbl);
+
+  const bank=document.createElement('div');
+  bank.className='tile-bank'; bank.id='tile-bank';
+  q.tiles.forEach(t=>{
+    const tile=document.createElement('div');
+    tile.className='tile'; tile.textContent=t.val; tile.id='tile-'+t.id;
+    tile.draggable=true;
+    tile.addEventListener('dragstart',e=>{e.dataTransfer.setData('tileId',t.id);e.dataTransfer.setData('tileVal',t.val);});
+    tile.addEventListener('click',()=>tapTile(t.id,t.val));
+    bank.appendChild(tile);
+  });
+  body.appendChild(bank);
+}
+
+function appendSimplifyStep(body,prefix,placeholder,q){
+  const lbl=document.createElement('div');
+  lbl.className='step-label'; lbl.style.marginTop='16px';
+  lbl.textContent='Step 2 — Simplify';
+  body.appendChild(lbl);
+
+  // Teaching note: if the constant term is negative, show the + −N → −N transformation
+  if(q && q.c < 0 && q.outer > 0){
+    const note=document.createElement('div');
+    note.style.cssText='font-size:.78rem;color:var(--muted);font-family:var(--mono);margin-bottom:10px;line-height:1.7;';
+    const intermediate=`${q.outer > 0 ? q.outer+'x' : fmtTermFirst(q.termX)} + ${q.outer}×(${q.c})`;
+    note.innerHTML=`<span style="color:var(--amber)">Note:</span> Adding a negative is the same as subtracting.<br><span style="color:var(--muted)">${q.outer} × (${q.c}) = ${q.termC} &nbsp;→&nbsp; + ${q.termC} becomes − ${Math.abs(q.termC)}</span>`;
+    body.appendChild(note);
+  }
+
+  const row=document.createElement('div');
+  row.className='answer-row';
+  row.innerHTML=`<span class="answer-prefix">${prefix}</span>
+    <input class="answer-input" id="main-input" type="text" placeholder="${placeholder||'e.g. 2x + 10'}" autocomplete="off" readonly/>`;
+  body.appendChild(row);
+}
+
+function renderSubstitution(q){
+  document.getElementById('q-prompt').textContent=q.prompt;
+  // Use innerHTML to support vertical fraction HTML
+  document.getElementById('q-expr').innerHTML=`<span class="hi">${q.expr}</span>`;
+  const body=document.getElementById('q-body'); body.innerHTML='';
+
+  if(q.subType==='verify'){
+    document.getElementById('btn-submit').style.display='none';
+    document.getElementById('keypad').style.display='none';
+
+    // Step 1 — calculate left side
+    const lbl1=document.createElement('div'); lbl1.className='step-label';
+    lbl1.textContent=`Step 1 — If x = ${q.xVal}, the left side becomes`;
+    body.appendChild(lbl1);
+
+    const lhsBox=document.createElement('div');
+    lhsBox.style.cssText='font-family:var(--mono);font-size:1.1rem;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;color:var(--accent);';
+    lhsBox.innerHTML=`${q.a}(${q.xVal}) + ${q.b} = ${q.a*q.xVal} + ${q.b} = <strong style="color:var(--text)">${q.lhs}</strong>`;
+    body.appendChild(lhsBox);
+
+    // Step 2 — show right side
+    const lbl2=document.createElement('div'); lbl2.className='step-label';
+    lbl2.textContent='Step 2 — The right side is';
+    body.appendChild(lbl2);
+
+    const rhsBox=document.createElement('div');
+    rhsBox.style.cssText='font-family:var(--mono);font-size:1.1rem;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;color:var(--text);';
+    rhsBox.textContent=String(q.rhs);
+    body.appendChild(rhsBox);
+
+    // Step 3 — are they equal?
+    const lbl3=document.createElement('div'); lbl3.className='step-label';
+    lbl3.textContent=`Step 3 — Is ${q.lhs} equal to ${q.rhs}?`;
+    body.appendChild(lbl3);
+
+    const btns=document.createElement('div'); btns.className='verify-btns';
+    btns.innerHTML=`<button class="btn-verify yes" onclick="submitVerify(true)">Yes, they are equal</button>
+                    <button class="btn-verify no" onclick="submitVerify(false)">No, they are not equal</button>`;
+    body.appendChild(btns);
+    return;
+  }
+
+  // Step 1 — drag the value of x into the blank
+  const lbl1=document.createElement('div'); lbl1.className='step-label';
+  lbl1.textContent=`Step 1 — Drag the value of x into the blank`;
+  body.appendChild(lbl1);
+
+  // Build the expression template with a single drop zone for x
+  const tmpl=document.createElement('div');
+  tmpl.className='expand-template';
+  tmpl.style.cssText='font-size:1.5rem;font-weight:700;margin-bottom:16px;flex-wrap:wrap;gap:4px;align-items:center;';
+  tmpl.innerHTML=buildSubstTemplate(q);
+  body.appendChild(tmpl);
+
+  // Tile bank — xVal plus two distractors
+  const blbl=document.createElement('div'); blbl.className='step-label';
+  blbl.textContent='Drag or tap a tile';
+  body.appendChild(blbl);
+
+  const bank=document.createElement('div');
+  bank.className='tile-bank'; bank.id='tile-bank';
+  const distractors=genDistractors(q.xVal,2);
+  const substTiles=shuffleArr([
+    {val:String(q.xVal),id:'sv'},
+    ...distractors.map((d,i)=>({val:String(d),id:'sd'+i}))
+  ]);
+  substTiles.forEach(t=>{
+    const tile=document.createElement('div');
+    tile.className='tile'; tile.textContent=t.val; tile.id='tile-'+t.id;
+    tile.draggable=true;
+    tile.addEventListener('dragstart',e=>{e.dataTransfer.setData('tileId',t.id);e.dataTransfer.setData('tileVal',t.val);});
+    tile.addEventListener('click',()=>tapSubstTile(t.id,t.val));
+    bank.appendChild(tile);
+  });
+  body.appendChild(bank);
+
+  q._substPhase=1;
+}
+
+// ═══════════════════════════════════════════════════════
+//  DRAG & DROP
+// ═══════════════════════════════════════════════════════
+function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add('over');}
+function dzLeave(id){document.getElementById(id).classList.remove('over');}
+function dzDrop(e,id){
+  e.preventDefault(); dzLeave(id);
+  const tileId=e.dataTransfer.getData('tileId');
+  const tileVal=e.dataTransfer.getData('tileVal');
+  placeTile(id,tileId,tileVal);
+  // Level 2 substitution drop zone
+  if(id==='sdz'){
+    const q=S.currentQ;
+    if(q && q._substPhase===1 && tileVal===String(q.xVal)){
+      triggerSubstReminder(q);
+    }
+  }
+  // Level 3 verify drop zone
+  if(id==='vdz'){
+    checkVerifyDrop(tileVal);
+  }
+}
+function tapTile(tileId,tileVal){
+  const zones=['dz0','dz1','dz2','dz3'];
+  for(const zid of zones){
+    const z=document.getElementById(zid);
+    if(z&&!z.classList.contains('filled')){placeTile(zid,tileId,tileVal);return;}
+  }
+}
+function dzTap(id){
+  const z=document.getElementById(id);
+  if(z&&z.classList.contains('filled')){
+    const prev=z.dataset.tileId;
+    if(prev){const t=document.getElementById('tile-'+prev);if(t)t.classList.remove('used');}
+    z.textContent='';z.classList.remove('filled');delete z.dataset.tileId;
+  }
+}
+// ═══════════════════════════════════════════════════════
+//  LEVEL 3 — RENDER VERIFY
+// ═══════════════════════════════════════════════════════
+function renderVerify(q){
+  document.getElementById('q-prompt').textContent='';
+  document.getElementById('q-expr').innerHTML='';
+  document.getElementById('btn-submit').style.display='none';
+  document.getElementById('keypad').style.display='none';
+  document.getElementById('btn-hint').style.display='none';
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('btn-redo').classList.remove('show');
+
+  const body=document.getElementById('q-body');
+  body.innerHTML='';
+
+  if(!S.verifyIntroShown){
+    S.verifyIntroShown=true;
+    showVerifyIntroPanel(q, 1);
+  } else {
+    showVerifyReminder(q);
+  }
+}
+
+function showVerifyIntroPanel(q, panel){
+  const body=document.getElementById('q-body');
+  body.innerHTML='';
+
+  const panels=[
+    {
+      text:`x is an unknown number for now — but it can't just be any old number. <strong>Not just any value will work.</strong>`,
+      btns:[{label:'Makes sense so far', next:2}]
+    },
+    {
+      text:`Only one value of x makes the left side equal to the right side.<br><br>
+            Let us test whether <strong style="font-family:var(--mono);font-size:1.1rem;color:var(--accent)">x = ${q.xVal}</strong> is that value. Ok?`,
+      btns:[
+        {label:'I am ready to test', next:3},
+        {label:'Help — I do not understand!', next:'help', style:'help'}
+      ]
+    },
+    {
+      text:`Here is how we will test it: we will substitute <strong style="color:var(--accent)">${q.xVal}</strong> wherever we see x, then we will calculate the left side, and we will check if it equals the right side.<br><br>
+            If they match — <strong style="color:var(--correct)">x = ${q.xVal} works</strong>. The = sign is telling the truth.<br>
+            If they don't — <strong style="color:var(--wrong)">x = ${q.xVal} cannot be the answer</strong>. The = sign would be lying.`,
+      btns:[{label:'Let\'s go →', next:'question'}]
+    }
+  ];
+
+  const p=panels[panel-1];
+  const box=document.createElement('div');
+  box.className='verify-intro';
+  box.innerHTML=`<div class="verify-intro-text">${p.text}</div>
+    <div class="verify-intro-btns">
+      ${p.btns.map(b=>`<button class="verify-intro-btn ${b.style||''}"
+        onclick="verifyIntroBtnClick(${typeof b.next==='string'?`'${b.next}'`:b.next})">${b.label}</button>`).join('')}
+    </div>`;
+  body.appendChild(box);
+}
+
+function verifyIntroBtnClick(next){
+  const q=S.currentQ;
+  if(next==='help'){ showHelpAnim(q); return; }
+  if(next==='question'){ showVerifyQuestion(q); return; }
+  showVerifyIntroPanel(q, next);
+}
+
+function showVerifyReminder(q){
+  const body=document.getElementById('q-body');
+  const rem=document.createElement('div');
+  rem.className='verify-intro';
+  rem.style.cssText='background:rgba(79,142,247,.06);border-color:rgba(79,142,247,.2);padding:16px;';
+  rem.innerHTML=`<div class="verify-intro-text" style="margin-bottom:12px;font-size:.9rem;">
+    Testing <strong style="font-family:var(--mono);color:var(--accent)">x = ${q.xVal}</strong> in
+    <strong style="font-family:var(--mono);">${q.expr} = ${q.rhs}</strong>
+  </div>
+  <div class="verify-intro-btns">
+    <button class="verify-intro-btn" onclick="showVerifyQuestion(S.currentQ)">Test it →</button>
+    <button class="verify-intro-btn help" onclick="showHelpAnim(S.currentQ)">Help</button>
+  </div>`;
+  body.appendChild(rem);
+}
+
+function showVerifyQuestion(q){
+  const body=document.getElementById('q-body');
+  body.innerHTML='';
+
+  const lhsCalc=q.a*q.xVal+q.b;
+
+  // Equation display
+  const eqDisplay=document.createElement('div');
+  eqDisplay.style.cssText='font-family:var(--mono);font-size:1.6rem;font-weight:700;color:var(--accent);text-align:center;margin-bottom:20px;';
+  eqDisplay.textContent=`${q.expr} = ${q.rhs}`;
+  body.appendChild(eqDisplay);
+
+  // Two-column layout — LHS starts with drop zone, RHS hidden until after drop
+  const cols=document.createElement('div');
+  cols.className='eq-columns'; cols.id='verify-cols';
+
+  // Generate tile bank: correct value + 2 distractors
+  const distractors=genDistractors(q.xVal,2);
+  const tiles=shuffleArr([
+    {val:String(q.xVal),id:'vt0'},
+    ...distractors.map((d,i)=>({val:String(d),id:`vt${i+1}`}))
+  ]);
+
+  const dzHTML=`<div class="drop-zone" id="vdz" style="min-width:44px;display:inline-flex;align-items:center;justify-content:center;"
+    ondragover="dzOver(event,'vdz')" ondragleave="dzLeave('vdz')"
+    ondrop="dzDrop(event,'vdz')" onclick="dzTap('vdz')"></div>`;
+
+  cols.innerHTML=`
+    <div class="eq-col lhs" id="verify-lhs">
+      <div class="eq-col-label">Left side</div>
+      <div class="eq-col-expr" id="verify-lhs-steps">
+        <span class="step">${q.a}x + ${q.b}</span>
+        <span class="step" style="display:flex;align-items:center;gap:4px;font-size:1.05rem;">
+          ${q.a}(${dzHTML}) + ${q.b}
+        </span>
+      </div>
+    </div>
+    <div class="eq-col rhs" id="verify-rhs" style="opacity:0;transition:opacity .4s;">
+      <div class="eq-col-label">Right side</div>
+      <div class="eq-col-expr">
+        <span class="step result" style="margin-top:0">${q.rhs}</span>
+      </div>
+    </div>`;
+  body.appendChild(cols);
+
+  // Tile bank
+  const blbl=document.createElement('div');
+  blbl.className='step-label'; blbl.style.margin='14px 0 8px';
+  blbl.textContent='Drag or tap the value of x';
+  body.appendChild(blbl);
+
+  const bank=document.createElement('div');
+  bank.className='tile-bank'; bank.id='verify-tile-bank';
+  tiles.forEach(t=>{
+    const tile=document.createElement('div');
+    tile.className='tile'; tile.textContent=t.val; tile.id='tile-'+t.id;
+    tile.draggable=true;
+    tile.addEventListener('dragstart',e=>{e.dataTransfer.setData('tileId',t.id);e.dataTransfer.setData('tileVal',t.val);});
+    tile.addEventListener('click',()=>tapVerifyTile(t.id,t.val));
+    bank.appendChild(tile);
+  });
+  body.appendChild(bank);
+
+  // Verdict area — hidden until working is revealed
+  const verdict=document.createElement('div');
+  verdict.id='verify-verdict'; verdict.style.cssText='opacity:0;transition:opacity .4s;margin-top:16px;';
+  verdict.innerHTML=`<div class="step-label" style="margin-bottom:10px;">Is ${lhsCalc} equal to ${q.rhs}?</div>
+    <div class="verify-btns">
+      <button class="btn-verify yes" onclick="submitVerify(true)">Yes, they are equal</button>
+      <button class="btn-verify no" onclick="submitVerify(false)">No, they are not equal</button>
+    </div>`;
+  body.appendChild(verdict);
+}
+
+function tapVerifyTile(tileId,tileVal){
+  const z=document.getElementById('vdz');
+  if(!z) return;
+  if(z.classList.contains('filled')){
+    const old=z.dataset.tileId;
+    if(old){const t=document.getElementById('tile-'+old);if(t)t.classList.remove('used');}
+  }
+  z.textContent=tileVal; z.classList.add('filled'); z.dataset.tileId=tileId;
+  const tile=document.getElementById('tile-'+tileId);
+  if(tile) tile.classList.add('used');
+  soundTileDrop();
+  checkVerifyDrop(tileVal);
+}
+
+function checkVerifyDrop(droppedVal){
+  const q=S.currentQ;
+  const z=document.getElementById('vdz');
+  if(String(droppedVal)!==String(q.xVal)){
+    // Wrong tile — flash and clear
+    if(z){ z.classList.add('wrong-zone'); }
+    setTimeout(()=>{
+      if(z){
+        z.classList.remove('wrong-zone','filled');
+        z.textContent='';
+        const old=z.dataset.tileId;
+        if(old){const t=document.getElementById('tile-'+old);if(t)t.classList.remove('used');}
+        delete z.dataset.tileId;
+      }
+    },800);
+    return;
+  }
+
+  // Correct — lock tile, hide bank label and bank
+  if(z) z.classList.add('correct-zone');
+  document.querySelectorAll('#verify-tile-bank .tile').forEach(t=>t.classList.add('used'));
+  soundCorrect();
+
+  // Reveal working line by line
+  const lhsCalc=q.a*q.xVal+q.b;
+  const stepsEl=document.getElementById('verify-lhs-steps');
+  const newSteps=[
+    `${q.a*q.xVal} + ${q.b}`,
+    `<span style="color:var(--accent);font-weight:700;">${lhsCalc}</span>`
+  ];
+
+  newSteps.forEach((html,i)=>{
+    setTimeout(()=>{
+      const span=document.createElement('span');
+      span.className='step';
+      span.style.cssText='opacity:0;transition:opacity .4s;';
+      span.innerHTML=html;
+      stepsEl.appendChild(span);
+      setTimeout(()=>span.style.opacity='1',30);
+
+      // After last step, show RHS and verdict
+      if(i===newSteps.length-1){
+        setTimeout(()=>{
+          const rhs=document.getElementById('verify-rhs');
+          if(rhs) rhs.style.opacity='1';
+          // Animate xval span
+          const xspan=document.getElementById('xval-subst');
+          if(xspan) xspan.classList.add(q.correct?'xval-correct':'xval-wrong');
+          setTimeout(()=>{
+            const verdict=document.getElementById('verify-verdict');
+            if(verdict) verdict.style.opacity='1';
+          },400);
+        },300);
+      }
+    }, i*600);
+  });
+}
+
+// ── HELP ANIMATION ─────────────────────────────────────
+function showHelpAnim(q){
+  const overlay=document.getElementById('help-anim');
+  const stepsEl=document.getElementById('help-steps');
+  const closeBtn=document.getElementById('help-close');
+  stepsEl.innerHTML='';
+  closeBtn.style.opacity='0';
+  overlay.classList.add('show');
+
+  const steps=[
+    {html:`We have the equation: <span class="hl">${q.expr} = ${q.rhs}</span>`, delay:0},
+    {html:`x is unknown. We are going to <span class="hl">test x = ${q.xVal}</span>.`, delay:2000},
+    {html:`Replace x with <span class="hl">${q.xVal}</span> on the left side:<br>${q.a}(<span class="hl">${q.xVal}</span>) + ${q.b}`, delay:4000},
+    {html:`Calculate: ${q.a} × ${q.xVal} = <span class="hl">${q.a*q.xVal}</span><br>Then: ${q.a*q.xVal} + ${q.b} = <span class="hl">${q.a*q.xVal+q.b}</span>`, delay:6500},
+    {html:`Left side = <span class="hl">${q.a*q.xVal+q.b}</span> &nbsp;|&nbsp; Right side = <span class="hl">${q.rhs}</span>`, delay:9000},
+    {html: q.correct
+      ? `<span class="correct">${q.a*q.xVal+q.b} = ${q.rhs} ✓</span><br>They are equal. x = ${q.xVal} <span class="correct">works</span>.`
+      : `<span class="wrong">${q.a*q.xVal+q.b} ≠ ${q.rhs}</span><br>They are not equal. x = ${q.xVal} <span class="wrong">cannot be the answer</span>.`,
+      delay:11500},
+  ];
+
+  steps.forEach((s,i)=>{
+    const el=document.createElement('div');
+    el.className='help-step';
+    el.innerHTML=s.html;
+    stepsEl.appendChild(el);
+    setTimeout(()=>el.classList.add('visible'), s.delay);
+  });
+
+  // Show close button after all steps
+  setTimeout(()=>{ closeBtn.style.opacity='1'; }, 14000);
+}
+
+function closeHelpAnim(){
+  document.getElementById('help-anim').classList.remove('show');
+  showVerifyIntroPanel(S.currentQ, 3); // resume at panel 3
+}
+
+// ── SUBMIT VERIFY ──────────────────────────────────────
+function placeTile(zid,tileId,tileVal){
+  const z=document.getElementById(zid); if(!z) return;
+  if(z.classList.contains('filled')){
+    const old=z.dataset.tileId;
+    if(old){const t=document.getElementById('tile-'+old);if(t)t.classList.remove('used');}
+  }
+  z.textContent=tileVal; z.classList.add('filled'); z.dataset.tileId=tileId;
+  const tile=document.getElementById('tile-'+tileId);
+  if(tile) tile.classList.add('used');
+  soundTileDrop();
+}
+
+// ═══════════════════════════════════════════════════════
+//  KEYPAD
+// ═══════════════════════════════════════════════════════
+function buildKeypad(){
+  // 4-column grid, consistent on all screen sizes
+  // Row 1: 7 8 9 ⌫
+  // Row 2: 4 5 6 x
+  // Row 3: 1 2 3 −
+  // Row 4: 0 . + ²
+  const keys=['7','8','9','⌫','4','5','6','x','1','2','3','−','0','.','²','+'];
+  const kp=document.getElementById('keypad'); kp.innerHTML='';
+  kp.style.gridTemplateColumns='repeat(4,1fr)';
+  keys.forEach(k=>{
+    const b=document.createElement('button');
+    b.className='key';
+    if(k==='x') b.className='key key-x';
+    if(k==='⌫') b.classList.add('key-del');
+    b.textContent=k;
+    b.addEventListener('click',()=>keyPress(k));
+    kp.appendChild(b);
+  });
+}
+function keyPress(k){
+  const q=S.currentQ;
+  const useOp = q && q._substPhase===3 && document.getElementById('op-input');
+  const inp = useOp ? document.getElementById('op-input') : document.getElementById('main-input');
+  if(!inp) return;
+  if(k==='⌫'){inp.value=inp.value.slice(0,-1);return;}
+  inp.value+=k;
+  soundKeypress();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT
+// ═══════════════════════════════════════════════════════
+function submitAnswer(){
+  if(S.awaitingNext) return;
+  const q=S.currentQ;
+
+  // Double expansion flow
+  if(S.currentLevel===1 && q.type==='double'){
+    if(S.doublePhase<2){
+      const part=q.parts[S.doublePhase];
+      if(!checkDrag(part)) return;
+      const inp=document.getElementById('main-input');
+      const userAns=norm(inp?inp.value.trim():'');
+      const correctAns=norm(part.answer);
+      const altAns=buildAlt(part.answer);
+      if(userAns===correctAns||(altAns&&userAns===norm(altAns))){
+        if(inp) inp.classList.add('locked');
+        S.doubleResults.push({xCoeff:part.termX,constVal:part.termC,display:part.answer});
+        S.doublePhase++;
+        const box=document.getElementById('correct-box');
+        box.textContent=S.doublePhase===1?'First bracket done. ✓ Now expand the second.':'Both brackets expanded. ✓ Now collect like terms.';
+        box.classList.add('show');
+        setTimeout(()=>{box.classList.remove('show'); generateQuestion();},1400);
+        return;
+      } else {
+        if(inp) inp.classList.add('wrong');
+        showWrong(part,'simplify');
+        return;
+      }
+    } else {
+      // Collect stage
+      const inp=document.getElementById('main-input');
+      const userAns=norm(inp?inp.value.trim():'');
+      const correctAns=norm(q.collect.answer);
+      const altAns=buildAlt(q.collect.answer);
+      if(userAns===correctAns||(altAns&&userAns===norm(altAns))){
+        S.doublePhase=0; markCorrect(inp);
+      } else {
+        if(inp) inp.classList.add('wrong');
+        showWrongCollect(q.collect);
+      }
+      return;
+    }
+  }
+
+  // Single expansion
+  if(S.currentLevel===1 && q.type!=='double'){
+    if(!checkDrag(q)) return;
+  }
+
+  // Level 2 substitution — two phases
+  if(S.currentLevel===2 && q.subType!=='verify'){
+    if(q._substPhase===1){
+      // Check the drag zone
+      const sdz=document.getElementById('sdz');
+      const droppedVal=sdz?sdz.textContent.trim():'';
+      if(!droppedVal){
+        // Nothing dropped yet — nudge
+        if(sdz){ sdz.classList.add('wrong-zone'); setTimeout(()=>sdz.classList.remove('wrong-zone'),800); }
+        return;
+      } else if(droppedVal!==String(q.xVal)){
+        // Wrong tile — flash and clear
+        if(sdz){ sdz.classList.add('wrong-zone'); }
+        const box=document.getElementById('wrong-box');
+        box.innerHTML=`<strong>Not quite.</strong> x = ${q.xVal}, so replace x with <span style="color:var(--accent)">${q.xVal}</span>.`;
+        box.classList.add('show');
+        setTimeout(()=>{
+          box.classList.remove('show');
+          if(sdz){ sdz.classList.remove('wrong-zone'); sdz.textContent=''; sdz.classList.remove('filled');
+            const old=sdz.dataset.tileId; if(old){const t=document.getElementById('tile-'+old);if(t)t.classList.remove('used');}
+            delete sdz.dataset.tileId;
+          }
+        },1800);
+        return;
+      }
+      // Correct tile already confirmed by triggerSubstReminder — just fall through
+      // (phase was already set to 2 inside triggerSubstReminder)
+    }
+    // Phase 3 — check the operation result
+    if(q._substPhase===3){
+      const oi=document.getElementById('op-input');
+      const userOp=norm(oi?oi.value.trim():'');
+      const opResult=computeOpResult(q);  // always compute fresh
+      const correctOp=norm(String(opResult));
+      if(userOp===correctOp){
+        if(oi) oi.classList.add('correct');
+        q._opResult=opResult;  // store for assembled display
+        document.getElementById('btn-submit').disabled=true;
+        setTimeout(()=>showAssembledStep(q), 600);
+        return;
+      } else {
+        if(oi) oi.classList.add('wrong');
+        const box=document.getElementById('wrong-box');
+        box.innerHTML=`<strong>Not quite.</strong> ${buildOpQuestion(q)}<br>
+          <div class="worked">Answer: <span class="whi">${opResult}</span></div>`;
+        box.classList.add('show');
+        setTimeout(()=>{
+          box.classList.remove('show');
+          if(oi){ oi.classList.remove('wrong'); oi.value=''; }
+        },2000);
+        return;
+      }
+    }
+    const inp=document.getElementById('main-input');
+    const userAns=norm(inp?inp.value.trim():'');
+    const correctAns=norm(String(q.ans));
+    if(userAns===correctAns) markCorrect(inp);
+    else{ if(inp) inp.classList.add('wrong'); showWrong(q,'simplify'); }
+    return;
+  }
+
+  const inp=document.getElementById('main-input');
+  const userAns=norm(inp?inp.value.trim():'');
+  const correctAns=norm(q.answer!==undefined?String(q.answer):String(q.ans));
+  const altAns=buildAlt(q.answer!==undefined?String(q.answer):String(q.ans));
+
+  if(userAns===correctAns||(altAns&&userAns===norm(altAns))) markCorrect(inp);
+  else{ if(inp) inp.classList.add('wrong'); showWrong(q,'simplify'); }
+}
+
+function triggerSubstReminder(q){
+  const sdz=document.getElementById('sdz');
+  if(sdz){ sdz.classList.add('correct-zone'); sdz.classList.remove('over'); }
+  document.querySelectorAll('.tile').forEach(t=>t.classList.add('used'));
+  document.getElementById('btn-submit').disabled=true;
+
+  // Compute the core operation for this question
+  q._opResult = computeOpResult(q);   // the result of the implied operation e.g. 2×4=8
+  q._opQuestion = buildOpQuestion(q); // e.g. "What is 2 × 4?"
+  q._assembled  = buildAssembled(q);  // e.g. "8 + 8" — shown after step 3
+
+  S.substDragCorrect++;
+  const skipToFinal = S.substDragCorrect >= S.questionsPerLevel - 2; // last ~2-3 Qs
+
+  const body=document.getElementById('q-body');
+  const impliedBox=document.createElement('div');
+  impliedBox.className='implied-box'; impliedBox.id='implied-box';
+
+  if(skipToFinal){
+    // Late questions — just show a brief note, go straight to final answer
+    impliedBox.innerHTML=`<div class="implied-q">
+      <strong>${buildOpQuestion(q, true)}</strong> — work it out and type the answer.
+    </div>`;
+    body.appendChild(impliedBox);
+    setTimeout(()=>unlockFinal(q), 1800);
+    return;
+  }
+
+  const impliedOp = q.subType==='variety-fraction'?'÷':'×';
+
+  if(S.substDragCorrect<=3){
+    // First 3 — ask operation type
+    impliedBox.innerHTML=`
+      <div class="implied-q">
+        <strong>${buildExprFrag(q)}</strong> — what operation does the bracket imply?
+      </div>
+      <div class="implied-btns">
+        <button class="implied-btn" onclick="answerImplied(this,'×','${impliedOp}')">× Multiply</button>
+        <button class="implied-btn" onclick="answerImplied(this,'+','${impliedOp}')">+ Add</button>
+        <button class="implied-btn" onclick="answerImplied(this,'−','${impliedOp}')">− Subtract</button>
+      </div>`;
+    body.appendChild(impliedBox);
+  } else {
+    // Questions 4+ — just state it, move to op step
+    impliedBox.innerHTML=`<div class="implied-q">
+      <strong>${buildExprFrag(q)}</strong> — the bracket implies <strong>multiplication</strong>.
+    </div>`;
+    body.appendChild(impliedBox);
+    setTimeout(()=>{ showOpStep(q); }, 1800);
+  }
+}
+
+function buildExprFrag(q){
+  if(q.subType==='linear') return `${q.a}(${q.xVal})`;
+  if(q.subType==='variety-bracket') return `${q.a}(${q.xVal} + ${q.b})`;
+  if(q.subType==='variety-fraction') return `${q.xVal} ÷ ${q.denom}`;
+  if(q.subType==='variety-square') return `(${q.xVal})<sup>2</sup>`;
+  return String(q.xVal);
+}
+
+function buildOpQuestion(q, short=false){
+  if(q.subType==='linear') return short?`${q.a} × ${q.xVal}`:`What is ${q.a} × ${q.xVal}?`;
+  if(q.subType==='variety-bracket') return short?`${q.a} × (${q.xVal} + ${q.b})`:`What is ${q.a} × (${q.xVal} + ${q.b})?`;
+  if(q.subType==='variety-fraction') return short?`${q.xVal} ÷ ${q.denom}`:`What is ${q.xVal} ÷ ${q.denom}?`;
+  if(q.subType==='variety-square') return short?`${q.xVal}<sup>2</sup>`:`What is ${q.xVal}<sup>2</sup>?`;
+  return '';
+}
+
+function computeOpResult(q){
+  if(q.subType==='linear') return q.a * q.xVal;
+  if(q.subType==='variety-bracket') return q.a * (q.xVal + q.b);
+  if(q.subType==='variety-fraction') return q.xVal / q.denom;
+  if(q.subType==='variety-square') return q.xVal * q.xVal;
+  return q.xVal;
+}
+
+// Build the assembled expression shown after step 3 e.g. "8 + 8"
+function buildAssembled(q){
+  const r=computeOpResult(q);
+  if(q.subType==='linear') return `${r} + ${q.b}`;
+  if(q.subType==='variety-bracket') return String(r);
+  if(q.subType==='variety-fraction') return `${r} + ${q.b}`;
+  if(q.subType==='variety-square') return `${r} + ${q.b}`;
+  return String(r);
+}
+
+// Build HTML for the assembled expression (with vertical fraction if needed)
+function buildAssembledHTML(q){
+  const r=q._opResult!==undefined?q._opResult:computeOpResult(q);
+  if(q.subType==='linear'){
+    return `<span style="color:var(--correct)">${r}</span> <span style="color:var(--text)">+ ${q.b}</span>`;
+  }
+  if(q.subType==='variety-bracket'){
+    return `<span style="color:var(--correct)">${r}</span>`;
+  }
+  if(q.subType==='variety-fraction'){
+    return `<span class="vfrac" style="color:var(--correct)"><span class="num">${q.xVal}</span><span class="den">${q.denom}</span></span>
+            <span style="color:var(--text)"> = ${r} + ${q.b}</span>`;
+  }
+  if(q.subType==='variety-square'){
+    return `<span style="color:var(--correct)">${r}</span> <span style="color:var(--text)">+ ${q.b}</span>`;
+  }
+  return `<span style="color:var(--correct)">${r}</span>`;
+}
+
+function answerImplied(btn, chosen, correct){
+  const btns=document.querySelectorAll('.implied-btn');
+  btns.forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    btn.classList.add('correct-op');
+    const box=document.getElementById('correct-box');
+    box.textContent='Correct — the bracket means multiply. ✓';
+    box.classList.add('show');
+    setTimeout(()=>{ box.classList.remove('show'); showOpStep(S.currentQ); }, 900);
+  } else {
+    btn.classList.add('wrong-op');
+    btns.forEach(b=>{ if(b.textContent.includes(correct)) b.classList.add('correct-op'); });
+    const box=document.getElementById('wrong-box');
+    box.innerHTML=`The bracket implies <strong>multiplication</strong> — not ${chosen==='+'?'addition':'subtraction'}.<br>
+      <span style="font-size:.85rem;color:var(--muted)">2(5) means 2 × 5. The bracket is shorthand for ×.</span>`;
+    box.classList.add('show');
+    setTimeout(()=>{ box.classList.remove('show'); showOpStep(S.currentQ); }, 2000);
+  }
+}
+
+// Step 3 — type the result of the operation
+function showOpStep(q){
+  clearFeedback();
+  const ib=document.getElementById('implied-box');
+  if(ib) ib.remove();
+
+  const body=document.getElementById('q-body');
+
+  // Remove any stale step-2 rows from old render
+  ['lbl-step2','row-step2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.remove();
+  });
+
+  const opBox=document.createElement('div');
+  opBox.className='implied-box'; opBox.id='op-box';
+  opBox.style.cssText='border-color:var(--accent);margin-top:12px;';
+  opBox.innerHTML=`
+    <div class="implied-q" style="margin-bottom:10px;">
+      <strong>Step 3 —</strong> <span style="font-family:var(--mono);color:var(--accent);">${buildOpQuestion(q)}</span>
+    </div>
+    <div class="answer-row">
+      <span class="answer-prefix">=</span>
+      <input class="answer-input" id="op-input" type="text" placeholder="type here →" autocomplete="off"
+        style="border-color:var(--accent);background:rgba(79,142,247,.06);"/>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);margin-top:6px;letter-spacing:1px;">USE THE KEYPAD BELOW</div>`;
+  body.appendChild(opBox);
+  document.getElementById('btn-submit').disabled=false;
+  q._substPhase=3;
+
+  // Scroll the op-box into view on mobile
+  setTimeout(()=>opBox.scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+// Step 4 — show assembled expression, type final answer
+function showAssembledStep(q){
+  clearFeedback();
+  const ob=document.getElementById('op-box');
+  if(ob){ ob.classList.add('correct-op'); }
+
+  const body=document.getElementById('q-body');
+  const asmBox=document.createElement('div');
+  asmBox.className='implied-box'; asmBox.id='asm-box';
+  asmBox.style.cssText='margin-top:10px;border-color:var(--accent);';
+  asmBox.innerHTML=`
+    <div class="implied-q" style="margin-bottom:10px;">
+      <strong>Step 4 —</strong> Now you have:
+      <span style="font-family:var(--mono);font-size:1.15rem;margin-left:6px;">${buildAssembledHTML(q)}</span>
+    </div>
+    <div class="answer-row">
+      <span class="answer-prefix">=</span>
+      <input class="answer-input" id="main-input" type="text" placeholder="type the final answer →" autocomplete="off"
+        style="border-color:var(--accent);background:rgba(79,142,247,.06);"/>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);margin-top:6px;letter-spacing:1px;">USE THE KEYPAD BELOW</div>`;
+  body.appendChild(asmBox);
+  document.getElementById('btn-submit').disabled=false;
+  q._substPhase=4;
+  setTimeout(()=>asmBox.scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+// Skip straight to final answer (late questions)
+function unlockFinal(q){
+  const ib=document.getElementById('implied-box');
+  if(ib) ib.remove();
+  clearFeedback();
+  const body=document.getElementById('q-body');
+  const row=document.createElement('div'); row.className='answer-row'; row.style.marginTop='12px';
+  row.innerHTML=`<span class="answer-prefix">= </span>
+    <input class="answer-input" id="main-input" type="text" placeholder="type the answer" autocomplete="off"/>`;
+  body.appendChild(row);
+  document.getElementById('btn-submit').disabled=false;
+  q._substPhase=4;
+}
+
+// Legacy alias
+function unlockStep2(q){ unlockFinal(q); }
+
+function checkDrag(q){
+  const filled=['dz0','dz1','dz2','dz3'].map(id=>{const z=document.getElementById(id);return z?z.textContent.trim():'';});
+  const otv=q.outerTileVal; const xStr=q.xStr;
+  const ctv=q.cTileVal!==undefined?q.cTileVal:(q.c<0?`−${Math.abs(q.c)}`:String(q.c));
+  const vX=(a,b)=>(a===otv&&b===xStr)||(a===xStr&&b===otv);
+  const vC=(a,b)=>(a===otv&&b===ctv)||(a===ctv&&b===otv);
+  const ok=(vX(filled[0],filled[1])&&vC(filled[2],filled[3]))||(vC(filled[0],filled[1])&&vX(filled[2],filled[3]));
+  if(!ok){
+    const p1ok=vX(filled[0],filled[1])||vC(filled[0],filled[1]);
+    const p2ok=vX(filled[2],filled[3])||vC(filled[2],filled[3]);
+    ['dz0','dz1'].forEach(id=>{const z=document.getElementById(id);if(z){z.classList.remove('correct-zone','wrong-zone');z.classList.add(p1ok?'correct-zone':'wrong-zone');}});
+    ['dz2','dz3'].forEach(id=>{const z=document.getElementById(id);if(z){z.classList.remove('correct-zone','wrong-zone');z.classList.add(p2ok?'correct-zone':'wrong-zone');}});
+    showWrong(q,'drag'); return false;
+  }
+  ['dz0','dz1','dz2','dz3'].forEach(id=>{const z=document.getElementById(id);if(z){z.classList.remove('wrong-zone');z.classList.add('correct-zone');}});
+  return true;
+}
+
+function redoQuestion(){
+  S.doublePhase=0;
+  clearFeedback();
+  S.hintIndex=0; S.awaitingNext=false;
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('btn-redo').classList.remove('show');
+  document.getElementById('btn-submit').disabled=false;
+  document.getElementById('btn-submit').style.display='';
+  document.getElementById('btn-hint').style.display='';
+  document.getElementById('keypad').style.display='';
+  if(S.currentLevel===1){
+    if(S.currentQ.type==='double') renderDoublePart(S.currentQ);
+    else renderExpansion(S.currentQ);
+  } else {
+    renderSubstitution(S.currentQ);
+  }
+}
+
+function submitVerify(userSays){
+  const q=S.currentQ;
+  const lhsCalc=q.a*q.xVal+q.b;
+
+  // Animate the substituted value in the LHS column
+  const xspan=document.getElementById('xval-subst');
+  if(xspan){
+    xspan.classList.add(q.correct ? 'xval-correct' : 'xval-wrong');
+  }
+
+  if(userSays===q.correct){
+    soundCorrect();
+    flashCardCorrect();
+    rocketBurstOnCorrect();
+    const box=document.getElementById('correct-box');
+    if(q.correct){
+      box.innerHTML=`Correct. ✓<br><br><span style="font-size:.88rem;color:var(--muted)">
+        The = sign is telling the truth. <strong style="color:var(--text)">
+        x = ${q.xVal} is the only number that makes both sides equal.</strong></span>`;
+    } else {
+      box.innerHTML=`Correct. ✓<br><br><span style="font-size:.88rem;color:var(--muted)">
+        <strong style="color:var(--wrong)">x = ${q.xVal} cannot work.</strong>
+        The left side gives ${lhsCalc} but the right side is ${q.rhs}.
+        ${q.xVal} is not the number that makes both sides equal.</span>`;
+    }
+    box.classList.add('show');
+    S.score++;S.total++;S.questionsDone++;
+    S.streak++;S.wrongStreak=0;
+    updateDifficulty(); updateLevelScore(); updateRocket(); updateScoreDisplay();
+    endQuestion();
+  } else {
+    const errorMsg=detectVerifyError(q,userSays);
+    const box=document.getElementById('wrong-box');
+    let html='';
+    if(errorMsg){
+      html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+        border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.88rem;line-height:1.65;">
+        <span style="color:var(--amber);font-weight:600;">Check this:</span><br>${errorMsg}</div>`;
+    }
+    if(q.correct){
+      html+=`Not quite.<br><div class="worked">
+        Left side: ${q.a}(${q.xVal}) + ${q.b} = ${lhsCalc}<br>
+        Right side: ${q.rhs}<br>
+        ${lhsCalc} = ${q.rhs} — they <strong>are</strong> equal.<br>
+        <span class="whi">The = sign is telling the truth. x = ${q.xVal} works here.</span></div>`;
+    } else {
+      html+=`Not quite.<br><div class="worked">
+        Left side: ${q.a}(${q.xVal}) + ${q.b} = ${lhsCalc}<br>
+        Right side: ${q.rhs}<br>
+        ${lhsCalc} ≠ ${q.rhs} — they are <strong>not</strong> equal.<br>
+        <span class="whi">x = ${q.xVal} cannot work. The = sign would be lying.</span></div>`;
+    }
+    box.innerHTML=html;
+    box.classList.add('show');
+    S.total++;S.questionsDone++;
+    S.wrongStreak++;S.streak=0;
+    S.savedQ=q;
+    updateDifficulty(); updateLevelScore(); updateRocket(); updateScoreDisplay();
+    endQuestion(true);
+  }
+}
+
+// Build the HTML template showing the expression with a drop zone where x goes
+function buildSubstTemplate(q){
+  const dz=`<div class="drop-zone" id="sdz" style="min-width:48px;"
+    ondragover="dzOver(event,'sdz')" ondragleave="dzLeave('sdz')"
+    ondrop="dzDrop(event,'sdz')" onclick="dzTap('sdz')"></div>`;
+  const ctx='style="color:var(--text);font-family:var(--mono);"';
+  if(q.subType==='linear'){
+    return `<span ${ctx}>${q.a}(</span>${dz}<span ${ctx}>) + ${q.b}</span>`;
+  }
+  if(q.subType==='variety-bracket'){
+    return `<span ${ctx}>${q.a}(</span>${dz}<span ${ctx}> + ${q.b})</span>`;
+  }
+  if(q.subType==='variety-fraction'){
+    return `${dz}<span ${ctx}> ÷ ${q.denom} + ${q.b}</span>`;
+  }
+  if(q.subType==='variety-square'){
+    return `<span ${ctx}>(</span>${dz}<span ${ctx}>)<sup>2</sup> + ${q.b}</span>`;
+  }
+  return dz;
+}
+
+function genDistractors(xv, count){
+  const d=new Set();
+  while(d.size<count){
+    const offset=ri(1,4)*(Math.random()<0.5?1:-1);
+    const v=xv+offset;
+    if(v>0 && v!==xv) d.add(v);
+  }
+  return [...d];
+}
+
+function tapSubstTile(tileId,tileVal){
+  const z=document.getElementById('sdz');
+  if(!z) return;
+  if(z.classList.contains('filled')){
+    const old=z.dataset.tileId;
+    if(old){const t=document.getElementById('tile-'+old);if(t)t.classList.remove('used');}
+  }
+  z.textContent=tileVal; z.classList.add('filled'); z.dataset.tileId=tileId;
+  const tile=document.getElementById('tile-'+tileId);
+  if(tile) tile.classList.add('used');
+  // Immediately check if this is the correct value and trigger reminder
+  const q=S.currentQ;
+  if(q && q._substPhase===1 && tileVal===String(q.xVal)){
+    triggerSubstReminder(q);
+  }
+}
+
+function normSubst(s){
+  return s.replace(/\s/g,'').replace(/−/g,'-').replace(/×/g,'*').toLowerCase();
+}
+function norm(s){
+  return s.replace(/\s/g,'').replace(/−/g,'-').replace(/\+0$/,'').replace(/-0$/,'').toLowerCase();
+}
+function buildAlt(ans){
+  if(!ans) return null;
+  const m=String(ans).match(/^(-?\d*x)\s*([+\-−]\s*\d+)$/i);
+  if(!m) return null;
+  const xp=m[1],cp=m[2].replace(/\s/g,'');
+  const cn=cp.replace(/[+\-−]/,'').trim();
+  const cs=cp.startsWith('-')||cp.startsWith('−')?'-':'';
+  return `${cs}${cn}+${xp}`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  MARK CORRECT / WRONG
+// ═══════════════════════════════════════════════════════
+function markCorrect(inp){
+  if(inp){inp.classList.remove('wrong');inp.classList.add('correct');}
+  soundCorrect();
+  flashCardCorrect();
+  rocketBurstOnCorrect();
+  if(S.redoActive){
+    S.score+=0.5; S.corrected++;
+    S.redoActive=false;
+    S.total++; S.questionsDone++;
+    S.streak++; S.wrongStreak=0;
+    updateDifficulty(); updateLevelScore(); updateRocket();
+    tickScore(Math.round(S.score));
+    const box=document.getElementById('correct-box');
+    box.innerHTML=`Corrected. ✓ <span style="font-size:.82rem;color:var(--muted)">(½ mark)</span>`;
+    box.classList.add('show');
+  } else {
+    S.score++;S.total++;S.questionsDone++;
+    S.streak++;S.wrongStreak=0;
+    updateDifficulty(); updateLevelScore(); updateRocket();
+    tickScore(Math.round(S.score));
+    const box=document.getElementById('correct-box');
+    box.textContent=randCorrect();
+    box.classList.add('show');
+  }
+  updateScoreDisplay();
+  checkSpeedOffer();
+  endQuestion();
+}
+function markCorrectVerify(){
+  S.score++;S.total++;S.questionsDone++;
+  S.streak++;S.wrongStreak=0;
+  updateDifficulty();
+  updateLevelScore();
+  const box=document.getElementById('correct-box');
+  box.textContent=randCorrect();
+  box.classList.add('show');
+  updateScoreDisplay();
+  endQuestion();
+}
+// ═══════════════════════════════════════════════════════
+//  ERROR-SPECIFIC FEEDBACK
+// ═══════════════════════════════════════════════════════
+function detectExpansionError(q, userAns){
+  // q has: outer, xc (x coefficient), c (constant), answer e.g. "6x+8"
+  const a=q.outer, xc=q.xc||1, c=q.c;
+  const absC=Math.abs(c);
+  const u=userAns.replace(/\s/g,'').toLowerCase();
+
+  // Forgot to multiply constant — e.g. 3(2x+4) → 6x+4 instead of 6x+12
+  const forgotMult=norm(`${a*xc}x${c>=0?'+':'-'}${absC}`);
+  if(u===forgotMult){
+    return `You multiplied ${a} × ${xc==='1'?'':xc}x correctly, but forgot to multiply ${a} × ${absC}. The ${a} reaches <strong>both</strong> terms inside the bracket.`;
+  }
+
+  // Treated constant as x-term — e.g. 3(2x+4) → 6x+12x
+  const constAsX=norm(`${a*xc}x+${a*absC}x`);
+  const constAsX2=norm(`${a*xc+a*absC}x`);
+  if(u===constAsX||u===constAsX2){
+    return `${absC} is a number, not an x-term. ${a} × ${absC} = ${a*absC}, not ${a*absC}x.`;
+  }
+
+  // Collapsed to single number — added unlike terms
+  const collapsed=String(a*xc*1+a*c); // rough check
+  if(u===collapsed||u===String(a*(xc+absC))){
+    return `You cannot add ${a*xc}x and ${a*c>=0?a*c:Math.abs(a*c)} — they are different types. ${a*xc}x stays as ${a*xc}x, and ${a*c} stays as ${a*c}. They cannot be combined.`;
+  }
+
+  // Sign error on negative outer: -2(x-3) → -2x-6 instead of -2x+6
+  if(a<0 && c<0){
+    const signErr=norm(`${a*xc}x${a*c}`); // e.g. -2x-6
+    const correct=norm(String(q.answer));
+    if(u===signErr && signErr!==correct){
+      return `Careful with two negatives. ${a} × ${c} = +${a*c*-1*-1} — negative × negative = <strong>positive</strong>. So the last term should be +${Math.abs(a*c)}.`;
+    }
+  }
+
+  // Missing the x-term entirely on negative outer: -2(x-3) → 2x+6
+  if(a<0){
+    const missedNeg=norm(`${Math.abs(a*xc)}x${a*c>=0?'+'+a*c:a*c}`);
+    if(u===missedNeg){
+      return `The ${a} is negative — that negative must carry through. ${a} × x = ${a*xc}x, not ${Math.abs(a*xc)}x.`;
+    }
+  }
+
+  return null; // no specific error matched
+}
+
+function detectSubstError(q, userAns){
+  const u=userAns.replace(/\s/g,'').toLowerCase();
+  const xv=q.xVal;
+
+  if(q.subType==='linear'){
+    const a=q.a, b=q.b;
+    // Concatenation: e.g. 3x+5 when x=4 → typed "34" or "34+5" or "345"
+    const concat=String(a)+String(xv);
+    if(u.startsWith(concat.toLowerCase())||u===concat.toLowerCase()){
+      return `Substitution means <strong>replacing</strong> x with ${xv}, not writing them side by side. ${a}x means ${a} × ${xv} = ${a*xv}.`;
+    }
+    // Added instead of multiplied: a+xv+b
+    if(u===String(a+xv+b)||u===String(a+xv)){
+      return `${a}x means ${a} <strong>times</strong> x, not ${a} plus x. When x = ${xv}, that is ${a} × ${xv} = ${a*xv}.`;
+    }
+    // Got the multiplication right but wrong sign on b
+    if(u===String(a*xv-b)&&b>0){
+      return `Check the sign on the last term. The expression says +${b}, so you add ${b} after the multiplication.`;
+    }
+    if(u===String(a*xv+Math.abs(b))&&b<0){
+      return `Check the sign on the last term. The expression says −${Math.abs(b)}, so you subtract ${Math.abs(b)}.`;
+    }
+  }
+
+  if(q.subType==='variety-square'){
+    // Doubled instead of squared
+    if(u===String(xv*2+q.b)||u===String(xv*2)){
+      return `x² means x <strong>× x</strong>, not 2 × x. When x = ${xv}, that is ${xv} × ${xv} = ${xv*xv}.`;
+    }
+  }
+
+  if(q.subType==='variety-bracket'){
+    // Added a(xv+b) as a+xv+b
+    const wrongAdd=q.a+(xv+q.b);
+    if(u===String(wrongAdd)){
+      return `${q.a}(${xv} + ${q.b}) means ${q.a} <strong>times</strong> (${xv} + ${q.b}). Work out the bracket first: ${xv} + ${q.b} = ${xv+q.b}. Then multiply: ${q.a} × ${xv+q.b}.`;
+    }
+  }
+
+  return null;
+}
+
+function detectVerifyError(q, userSays){
+  // Student picked wrong — give a pointed nudge
+  const lhsCalc=q.a*q.xVal+q.b;
+  if(userSays!==q.correct){
+    if(q.correct){
+      // Said "not equal" when they are
+      return `Look again at the left side. ${q.a}(${q.xVal}) + ${q.b} = ${q.a*q.xVal} + ${q.b} = ${lhsCalc}. The right side is also ${q.rhs}. They <strong>are</strong> equal.`;
+    } else {
+      // Said "equal" when they are not
+      return `Look only at the left side. ${q.a}(${q.xVal}) + ${q.b} = ${q.a*q.xVal} + ${q.b} = ${lhsCalc}. The right side is ${q.rhs}. ${lhsCalc} and ${q.rhs} are <strong>not</strong> the same.`;
+    }
+  }
+  return null;
+}
+
+function showWrong(q,ctx){
+  if(!S.redoActive){
+    S.total++;S.questionsDone++;
+    S.wrongStreak++;S.streak=0;
+    S.savedQ=q;
+  }
+  soundWrong();
+  updateDifficulty(); updateLevelScore(); updateRocket(); updateScoreDisplay();
+
+  // Detect specific error from student's typed answer
+  const inp=document.getElementById('main-input');
+  const userAns=inp?inp.value.trim():'';
+  let errorMsg=null;
+  if(S.currentLevel===1 && q.type!=='double') errorMsg=detectExpansionError(q,userAns);
+  else if(S.currentLevel===2 && q.subType!=='verify') errorMsg=detectSubstError(q,userAns);
+
+  const box=document.getElementById('wrong-box');
+  let html='';
+  if(errorMsg){
+    html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+      border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.88rem;line-height:1.65;">
+      <span style="color:var(--amber);font-weight:600;">What happened:</span><br>${errorMsg}</div>`;
+  }
+  html+=buildWorked(q,ctx);
+  box.innerHTML=html;
+  box.classList.add('show');
+
+  // Inject expansion arrows
+  if(S.currentLevel===1 && q.type!=='double' && q.outer && q.xStr){
+    const slot=document.getElementById('worked-arrow-slot');
+    if(slot){
+      const outerStr=q.outer<0?`−${Math.abs(q.outer)}`:`${q.outer}`;
+      showWorkedArrows(slot, outerStr, q.xStr, q.c);
+    }
+  }
+
+  document.getElementById('btn-submit').disabled=true;
+  endQuestion(true);
+}
+function showWrongCollect(c){
+  S.total++;S.questionsDone++;
+  S.wrongStreak++;S.streak=0;
+  updateDifficulty();
+  updateLevelScore();
+  updateScoreDisplay();
+  const box=document.getElementById('wrong-box');
+  box.innerHTML=`<strong>Collecting like terms:</strong>
+    <div class="worked">
+      x terms: ${c.t1x}x + ${c.t2x}x = <span class="whi">${c.totalX}x</span><br>
+      numbers: ${c.t1c} + ${c.t2c} = <span class="whi">${c.totalC}</span><br>
+      Answer: <span class="whi">${c.answer}</span>
+    </div>
+    <br><em style="font-size:.82rem;color:var(--muted)">Strategy: collect the x terms first, then collect the numbers. Two separate steps.</em>`;
+  box.classList.add('show');
+  document.getElementById('btn-submit').disabled=true;
+  S.doublePhase=0;
+  endQuestion();
+}
+
+function updateLevelScore(){
+  if(S.currentLevel===1){S.l1Score=S.score;S.l1Total=S.total;S.l1Corrected=S.corrected;}
+  else if(S.currentLevel===2){S.l2Score=S.score;S.l2Total=S.total;S.l2Corrected=S.corrected;}
+  else{S.l3Score=S.score;S.l3Total=S.total;S.l3Corrected=S.corrected;}
+}
+
+// ═══════════════════════════════════════════════════════
+//  DEBUG FUNCTIONS
+// ═══════════════════════════════════════════════════════
+function debugSkip(lvl){
+  if(!S.name) S.name = 'Teacher';
+  if(lvl>=2){ S.l1Complete=true; }
+  if(lvl>=3){ S.l2Complete=true; }
+  updateLevelCards();
+  document.getElementById('pin-overlay').classList.remove('show');
+  show('screen-teacher');
+  setTimeout(()=>{ beginLevel(lvl); },100);
+}
+function debugNearEnd(){
+  S.questionsDone=Math.max(S.questionsDone,7);
+  updateSegProgress();
+  show('screen-game');
+}
+function debugForceComplete(){
+  if(!S.name) S.name = 'Teacher';
+  show('screen-teacher');
+  setTimeout(()=>{
+    const qpl=S.questionsPerLevel||10;
+    S.score=Math.round(qpl*0.8); S.total=qpl; S.questionsDone=qpl;
+    showComplete();
+  },100);
+}
+function debugDiff(d){
+  S.difficulty=d;
+  document.getElementById('diff-pips').querySelectorAll('.pip')
+    .forEach((p,i)=>p.classList.toggle('on',i<S.difficulty));
+}
+function debugClearMyRecord(){
+  if(!S.name){ alert('No active student name.'); return; }
+  const key='em_progress_'+S.name.toLowerCase().replace(/\s/g,'_');
+  localStorage.removeItem(key);
+  alert(`Progress cleared for "${S.name}".`);
+}
+
+function endQuestion(showRedo=false){
+  S.awaitingNext=true;
+  document.getElementById('btn-hint').style.display='none';
+  const nb=document.getElementById('btn-next');
+  const rb=document.getElementById('btn-redo');
+  nb.classList.add('show');
+  if(showRedo && !S.redoActive){
+    rb.classList.add('show');
+  } else {
+    rb.classList.remove('show');
+  }
+  if(S.questionsDone>=S.questionsPerLevel){
+    nb.textContent='See results →';
+    nb.onclick=showComplete;
+  } else {
+    nb.textContent='Next →';
+    nb.onclick=nextQuestion;
+  }
+  saveProgress();
+}
+
+function nextQuestion(){
+  document.getElementById('keypad').style.display='';
+  document.getElementById('btn-submit').style.display='';
+  if(S.currentLevel===1&&S.currentQ&&S.currentQ.type==='double'&&S.doublePhase>0&&S.doublePhase<3){
+    generateQuestion();
+  } else {
+    S.currentQ=null; S.doublePhase=0;
+    generateQuestion();
+  }
+}
+
+function updateScoreDisplay(){
+  document.getElementById('score-correct').textContent=S.score;
+  document.getElementById('score-total').textContent=S.total;
+  updateSegProgress();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SPEED ROUND
+// ═══════════════════════════════════════════════════════
+function checkSpeedOffer(){
+  if(S.currentLevel===2&&!S.speedOfferShown&&S.streak>=3&&S.currentQ&&S.currentQ.subType==='linear'){
+    S.speedOfferShown=true;
+    document.getElementById('btn-next').onclick=offerSpeedRound;
+    document.getElementById('btn-next').textContent='Next →';
+  }
+}
+function offerSpeedRound(){ show('screen-speed'); }
+function startSpeedRound(){
+  S.speedRoundActive=true; show('screen-game');
+  document.getElementById('timer-display').style.display='block';
+  S.currentQ=genSubstitution();
+  while(S.currentQ.subType!=='linear') S.currentQ=genSubstitution();
+  renderSubstitution(S.currentQ);
+  clearFeedback();
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('btn-submit').disabled=false;
+  document.getElementById('btn-hint').style.display='none';
+  startTimer();
+}
+function skipSpeedRound(){ S.speedRoundActive=false; show('screen-game'); nextQuestion(); }
+function startTimer(){
+  S.timerSec=10;
+  const el=document.getElementById('timer-num');
+  el.textContent=S.timerSec; el.classList.remove('urgent');
+  clearInterval(S.timerInterval);
+  S.timerInterval=setInterval(()=>{
+    S.timerSec--;
+    el.textContent=S.timerSec;
+    if(S.timerSec<=3) el.classList.add('urgent');
+    if(S.timerSec<=0){ clearInterval(S.timerInterval); endSpeedRound(false); }
+  },1000);
+}
+function clearTimer(){ clearInterval(S.timerInterval); document.getElementById('timer-display').style.display='none'; }
+function endSpeedRound(success){
+  clearTimer(); S.speedRoundActive=false;
+  const box=document.getElementById(success?'correct-box':'wrong-box');
+  box.textContent=success?'⚡ Speed round — done!':'Time\'s up. Keep practising the quick ones.';
+  box.classList.add('show');
+  S.awaitingNext=true;
+  const nb=document.getElementById('btn-next');
+  nb.classList.add('show');
+  nb.onclick=()=>{ nb.onclick=nextQuestion; nextQuestion(); };
+}
+
+// ═══════════════════════════════════════════════════════
+//  HINTS
+// ═══════════════════════════════════════════════════════
+const HINTS_L1=[
+  "What's outside the bracket? What's inside? Everything inside gets multiplied by what's outside.",
+  "Take it one term at a time — outer × first term, then outer × second term.",
+  "Try filling in the drag boxes first. Then simplify each multiplication.",
+];
+const HINTS_L2={
+  linear:["Replace every x with the number given. Then calculate what's left.","Write it out step by step — substitute first, then work out the arithmetic."],
+  variety:["Replace x with the given value. Then simplify.","Work step by step — substitute first, then calculate inside any brackets."],
+  verify:["Substitute the value into the left side. Calculate. Then compare to the right side.","If both sides give the same number, the equation is satisfied. If not, it isn't."],
+};
+const HINTS_COLLECT=[
+  "Look at your two results. Collect the x terms together, then collect the numbers.",
+  "x terms: add the coefficients. Numbers: add the constants. Two separate jobs.",
+];
+
+function showHint(){
+  const box=document.getElementById('hint-box');
+  const q=S.currentQ;
+  let hints;
+  if(S.currentLevel===1&&q.type==='double'&&S.doublePhase===2) hints=HINTS_COLLECT;
+  else if(S.currentLevel===1) hints=HINTS_L1;
+  else{ const k=q.subType==='verify'?'verify':q.subType==='linear'?'linear':'variety'; hints=HINTS_L2[k]; }
+  if(S.hintIndex<hints.length){
+    box.textContent=hints[S.hintIndex]; box.classList.add('show');
+    S.hintIndex++;
+    S.totalHintsUsed=(S.totalHintsUsed||0)+1; // track total hints
+    if(S.hintIndex>=hints.length){
+      document.getElementById('btn-hint').textContent='No more hints';
+      document.getElementById('btn-hint').disabled=true;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  WORKED SOLUTIONS
+// ═══════════════════════════════════════════════════════
+function buildWorked(q,context){
+  let html='';
+  if(S.currentLevel===1){
+    if(context==='drag') html+=`<strong>Check the multiplication step first.</strong><br>Everything inside gets multiplied by what's outside.<br><br>`;
+    // Placeholder div where arrows will be injected
+    if(q.type!=='double'){
+      html+=`<div id="worked-arrow-slot"></div>`;
+    }
+    html+=`<div class="worked">`;
+    q.workLines.forEach(l=>{html+=`${l}<br>`;});
+    html+=`<span class="whi">Answer: ${q.answer}</span></div>`;
+    if(q.type==='neg-outer') html+=`<br><em style="font-size:.82rem;color:var(--muted)">The outside number is negative. Negative × positive = negative. Every term inside becomes its opposite.</em>`;
+  } else {
+    const lines=q.workLine.split('\n');
+    html+=`<strong>Worked solution:</strong>`;
+    html+=`<div class="worked">`;
+    lines.forEach(l=>{ html+=`${l}<br>`; });
+    html+=`</div>`;
+    if(q.subType==='variety-fraction'){
+      html+=`<br><div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 14px;font-size:.82rem;margin-top:4px;">
+        <strong style="color:var(--pink)">Watch out for this mistake:</strong><br>
+        <span style="font-family:var(--mono);color:var(--muted)">${q.xVal} ÷ ${q.denom} = ${q.xVal/q.denom} = ${q.xVal/q.denom+q.b}</span> — the = signs are lying.<br>
+        <span style="color:var(--muted)">${q.xVal} ÷ ${q.denom} is ${q.xVal/q.denom}. But ${q.xVal/q.denom} is <strong>not</strong> equal to ${q.xVal/q.denom+q.b}.</span><br>
+        The = sign means <strong>"is"</strong>. Everything on the left must truly be the same as everything on the right. Write one step per line.
+      </div>`;
+    }
+    if(q.subType==='verify') html+=`<br><em style="font-size:.82rem;color:var(--muted)">${q.correct?'Both sides are equal — the = sign is telling the truth.':'The sides are not equal — the = sign would be lying.'}</em>`;
+  }
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMPLETE & SUMMARY
+// ═══════════════════════════════════════════════════════
+function showComplete(){
+  clearTimer();
+  const lvl=S.currentLevel;
+  hideRocket();
+  const launchMsg = lvl===1?`Level 1 complete, ${S.name}! 🚀`:
+                    lvl===2?`Level 2 complete, ${S.name}! 🚀`:
+                    `Mission complete, ${S.name}! 🌟`;
+  playLaunch(launchMsg, ()=>{
+    earnPatch(lvl);
+    const pct=Math.round((S.score/S.total)*100)||0;
+    document.getElementById('stat-score').textContent=S.score;
+    document.getElementById('stat-total').textContent=S.total;
+    document.getElementById('stat-pct').textContent=pct+'%';
+    if(lvl===1){
+      S.l1Complete=true;
+      document.getElementById('complete-title').textContent='Level 1 Complete';
+      document.getElementById('complete-sub').textContent="You know how to expand. Now let's put those expressions to work.";
+      document.getElementById('complete-btn').textContent='On to Level 2 →';
+      document.getElementById('card-l2').classList.remove('locked');
+      document.getElementById('badge-l2').textContent='Ready';
+      document.getElementById('badge-l2').className='level-badge badge-ready';
+      document.getElementById('badge-l1').textContent='Done';
+      document.getElementById('badge-l1').className='level-badge badge-done';
+      show('screen-complete');
+    } else if(lvl===2){
+      S.l2Complete=true;
+      document.getElementById('badge-l2').textContent='Done';
+      document.getElementById('badge-l2').className='level-badge badge-done';
+      document.getElementById('card-l3').classList.remove('locked');
+      document.getElementById('badge-l3').textContent='Ready';
+      document.getElementById('badge-l3').className='level-badge badge-ready';
+      document.getElementById('complete-title').textContent='Level 2 Complete';
+      document.getElementById('complete-sub').textContent="You can substitute. Now let's find out what values of x actually work.";
+      document.getElementById('complete-btn').textContent='On to Level 3 →';
+      show('screen-complete');
+    } else {
+      S.l3Complete=true;
+      document.getElementById('badge-l3').textContent='Done';
+      document.getElementById('badge-l3').className='level-badge badge-done';
+      showSummary();
+    }
+  });
+}
+
+function showSummary(){
+  const l1pct=S.l1Total>0?Math.round((S.l1Score/S.l1Total)*100):0;
+  const l2pct=S.l2Total>0?Math.round((S.l2Score/S.l2Total)*100):0;
+  const l3pct=S.l3Total>0?Math.round((S.l3Score/S.l3Total)*100):0;
+  const total=S.l1Total+S.l2Total+S.l3Total;
+  const correct=S.l1Score+S.l2Score+S.l3Score;
+  const overall=total>0?Math.round((correct/total)*100):0;
+  const totalCorrected=(S.l1Corrected||0)+(S.l2Corrected||0)+(S.l3Corrected||0);
+  const totalHints=S.totalHintsUsed||0;
+
+  document.getElementById('sum-name').textContent=S.name;
+  document.getElementById('sum-l1').textContent=`${S.l1Score}/${S.l1Total} (${l1pct}%)`;
+  document.getElementById('sum-l2').textContent=`${S.l2Score}/${S.l2Total} (${l2pct}%)`;
+  document.getElementById('sum-l3').textContent=`${S.l3Score}/${S.l3Total} (${l3pct}%)`;
+  document.getElementById('sum-overall').textContent=`${correct}/${total} (${overall}%)`;
+  document.getElementById('sum-hints').textContent=totalHints;
+  document.getElementById('sum-redos').textContent=totalCorrected;
+
+  const code=genCode(S.name,l1pct,l2pct,l3pct,overall,
+    S.l1Score,S.l1Total,S.l2Score,S.l2Total,S.l3Score,S.l3Total,
+    totalHints,totalCorrected,S.sessionID);
+  document.getElementById('sum-code').textContent=code;
+  saveRecord({name:S.name,
+    l1:`${S.l1Score}/${S.l1Total} (${l1pct}%)`,
+    l2:`${S.l2Score}/${S.l2Total} (${l2pct}%)`,
+    l3:`${S.l3Score}/${S.l3Total} (${l3pct}%)`,
+    overall:`${overall}%`,corrected:totalCorrected,hints:totalHints,code});
+  show('screen-summary');
+}
+
+function genCode(name,l1pct,l2pct,l3pct,overall,l1s,l1t,l2s,l2t,l3s,l3t,hints,redos,sid){
+  // Readable format: NAME-L1:score/total-L2:score/total-L3:score/total-H:hints-R:redos-S:sessionID
+  const n=name.trim().replace(/[^a-zA-Z0-9]/g,'').slice(0,12)||'Unknown';
+  const sess=(sid||'').slice(0,6);
+  return `${n}-L1:${l1s}/${l1t}-L2:${l2s}/${l2t}-L3:${l3s}/${l3t}-H:${hints}-R:${redos}-S:${sess}`;
+}
+
+function decodeCode(code){
+  // Parse: NAME-L1:s/t-L2:s/t-L3:s/t-H:n-R:n-S:id
+  try{
+    const m=code.match(/^([^-]+)-L1:(\d+)\/(\d+)-L2:(\d+)\/(\d+)-L3:(\d+)\/(\d+)-H:(\d+)-R:(\d+)-S:(\w*)/);
+    if(!m) return null;
+    const l1pct=m[3]>0?Math.round(m[2]/m[3]*100):0;
+    const l2pct=m[5]>0?Math.round(m[4]/m[5]*100):0;
+    const l3pct=m[7]>0?Math.round(m[6]/m[7]*100):0;
+    const tot=+m[3]+ +m[5]+ +m[7];
+    const cor=+m[2]+ +m[4]+ +m[6];
+    const overall=tot>0?Math.round(cor/tot*100):0;
+    return {name:m[1],l1:`${m[2]}/${m[3]} (${l1pct}%)`,l2:`${m[4]}/${m[5]} (${l2pct}%)`,
+            l3:`${m[6]}/${m[7]} (${l3pct}%)`,overall:`${overall}%`,
+            hints:m[8],redos:m[9],session:m[10]};
+  }catch(e){return null;}
+}
+
+function bulkDecode(){
+  const raw=document.getElementById('bulk-codes').value.trim();
+  if(!raw){ document.getElementById('bulk-result').innerHTML=''; return; }
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const results=lines.map(decodeCode);
+  if(results.every(r=>!r)){
+    document.getElementById('bulk-result').innerHTML='<div style="color:var(--wrong);font-size:.82rem;">No valid codes found. Check format.</div>';
+    return;
+  }
+  let html=`<table class="dash-table"><tr>
+    <th>Name</th><th>L1</th><th>L2</th><th>L3</th><th>Overall</th><th>Hints</th><th>Redos</th>
+  </tr>`;
+  results.forEach((r,i)=>{
+    if(!r){ html+=`<tr><td colspan="7" style="color:var(--wrong);">Line ${i+1}: invalid code</td></tr>`; return; }
+    html+=`<tr>
+      <td style="color:var(--text)">${r.name}</td>
+      <td>${r.l1}</td><td>${r.l2}</td><td>${r.l3}</td>
+      <td style="color:var(--accent)">${r.overall}</td>
+      <td>${r.hints}</td><td style="color:var(--amber)">${r.redos}</td>
+    </tr>`;
+  });
+  html+='</table>';
+  document.getElementById('bulk-result').innerHTML=html;
+}
+
+function copyLLMPrompt(){
+  const prompt=`Decode these Expression Mission Flight Record codes. Each code format is:\nNAME-L1:score/total-L2:score/total-L3:score/total-H:hints-R:redos-S:sessionID\nPresent results as a table with columns: Name, L1%, L2%, L3%, Hints used, Redos, Overall%\nHere are the codes:\n\n[PASTE YOUR CODES HERE]`;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    const box=document.getElementById('llm-prompt-box');
+    box.style.borderColor='var(--correct)';
+    setTimeout(()=>box.style.borderColor='',1500);
+  }).catch(()=>{
+    // Fallback: select the text
+    const range=document.createRange();
+    range.selectNode(document.getElementById('llm-prompt-box'));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+function completeAction(){
+  if(S.currentLevel===1) beginLevel(2);
+  else if(S.currentLevel===2) beginLevel(3);
+  else show('screen-levels');
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function clearFeedback(){
+  ['hint-box','wrong-box','correct-box'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('show'); el.innerHTML='';
+  });
+  const inp=document.getElementById('main-input');
+  if(inp) inp.classList.remove('correct','wrong','locked');
+  document.getElementById('btn-hint').disabled=false;
+  document.getElementById('btn-hint').textContent='Hint';
+  document.getElementById('btn-redo').classList.remove('show');
+}
+
+function randCorrect(){
+  const msgs=[
+    "Correct. ✓",
+    "That's exactly right. ✓",
+    "Spot on. ✓",
+    "Well done — keep going. ✓",
+    "Yes! That's it. ✓",
+    "Good thinking. ✓",
+    "You've got this. ✓",
+    "Nicely done. ✓",
+  ];
+  return msgs[ri(0,msgs.length-1)];
+}
+
+function formatExpr(xc,nc){
+  if(xc===0&&nc===0) return '0';
+  let s='';
+  if(xc!==0) s+=fmtTermFirst(xc);
+  if(nc!==0) s+=fmtC(nc);
+  return s.trim();
+}
+function fmtTermFirst(n){
+  if(n===1) return 'x'; if(n===-1) return '−x';
+  if(n>0) return `${n}x`; return `−${Math.abs(n)}x`;
+}
+function fmtC(n){
+  if(n===0) return '';
+  return n>0?` + ${n}`:` − ${Math.abs(n)}`;
+}
+function shuffleArr(a){return a.sort(()=>Math.random()-.5);}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!S.awaitingNext) submitAnswer();
+});
+
+// ═══════════════════════════════════════════════════════
+//  SOUND ENGINE
+// ═══════════════════════════════════════════════════════
+let audioCtx=null;
+let soundMuted=false;
+
+function toggleMute(){
+  soundMuted=!soundMuted;
+  const btn=document.getElementById('mute-btn');
+  if(btn){ btn.textContent=soundMuted?'🔇':'🔊'; btn.classList.toggle('muted',soundMuted); }
+}
+
+function getAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// iOS requires audio context to be resumed after a user gesture
+document.addEventListener('touchstart', function unlockAudio(){
+  if(audioCtx) audioCtx.resume();
+  else { audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }
+  document.removeEventListener('touchstart', unlockAudio);
+}, {once:true, passive:true});
+function playTone(freq,type,duration,vol,startDelay=0){
+  if(soundMuted) return;
+  try{
+    const ac=getAudio();
+    const osc=ac.createOscillator();
+    const gain=ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type=type; osc.frequency.setValueAtTime(freq,ac.currentTime+startDelay);
+    gain.gain.setValueAtTime(vol,ac.currentTime+startDelay);
+    gain.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+startDelay+duration);
+    osc.start(ac.currentTime+startDelay);
+    osc.stop(ac.currentTime+startDelay+duration+0.05);
+  }catch(e){}
+}
+function soundCorrect(){
+  playTone(440,'sine',0.35,0.15);
+  playTone(660,'sine',0.5,0.13,0.12);
+  playTone(660*1.002,'sine',0.7,0.05,0.14); // subtle reverb tail
+}
+function soundWrong(){
+  playTone(90,'sine',0.4,0.18);
+  playTone(70,'triangle',0.35,0.1,0.06);
+}
+function soundTileDrop(){
+  playTone(320,'sine',0.07,0.07);
+  playTone(220,'sine',0.12,0.03,0.05);
+}
+function soundStreak(){
+  [523,659,784,1047].forEach((f,i)=>playTone(f,'sine',0.22,0.09,i*0.07));
+}
+function soundLevelComplete(){
+  playTone(220,'sine',1.2,0.13);
+  playTone(330,'sine',1.2,0.11,0.35);
+  playTone(440,'sine',1.5,0.15,0.75);
+  playTone(550,'sine',1.0,0.1,1.15);
+  playTone(440*1.002,'sine',1.4,0.06,0.77);
+}
+function soundKeypress(){
+  playTone(700,'sine',0.04,0.03);
+}
+
+// ═══════════════════════════════════════════════════════
+//  CARD ANIMATIONS
+// ═══════════════════════════════════════════════════════
+function pulseCardBorder(){
+  const card=document.getElementById('question-card');
+  if(!card) return;
+  card.style.transition='box-shadow .2s ease, border-color .2s ease';
+  card.style.borderColor='var(--accent)';
+  card.style.boxShadow='0 0 0 2px rgba(79,142,247,.3), 0 0 20px rgba(79,142,247,.1)';
+  setTimeout(()=>{ card.style.borderColor=''; card.style.boxShadow=''; },700);
+}
+function flashCardCorrect(){
+  const card=document.getElementById('question-card');
+  if(!card) return;
+  card.style.transition='background .08s ease';
+  card.style.background='rgba(34,197,94,.08)';
+  setTimeout(()=>{ card.style.background=''; },380);
+}
+
+// Score tick animation
+let _scoreDisplayVal=0;
+function tickScore(target){
+  const el=document.getElementById('score-correct');
+  if(!el){ _scoreDisplayVal=target; return; }
+  const start=_scoreDisplayVal;
+  const diff=target-start;
+  if(diff<=0){ el.textContent=target; _scoreDisplayVal=target; return; }
+  let step=0; const steps=8;
+  const iv=setInterval(()=>{
+    step++;
+    el.textContent=Math.round(start+diff*(step/steps));
+    if(step>=steps){ clearInterval(iv); _scoreDisplayVal=target; }
+  },22);
+}
+
+// ═══════════════════════════════════════════════════════
+//  STARFIELD — PARALLAX LAYERS
+// ═══════════════════════════════════════════════════════
+(function initStarfield(){
+  const canvas=document.getElementById('starfield');
+  const ctx=canvas.getContext('2d');
+  let shooters=[];
+  const layers=[
+    {stars:[],count:80,rMin:0.2,rMax:0.7, speedY:0.02,px:0.008,opacity:0.38},
+    {stars:[],count:45,rMin:0.4,rMax:1.1, speedY:0.06,px:0.018,opacity:0.58},
+    {stars:[],count:22,rMin:0.7,rMax:1.5, speedY:0.11,px:0.030,opacity:0.82},
+  ];
+  let offsetX=0,offsetY=0,targetX=0,targetY=0;
+
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  function makeStars(){
+    layers.forEach(l=>{
+      l.stars=[];
+      for(let i=0;i<l.count;i++) l.stars.push({
+        x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+        r:Math.random()*(l.rMax-l.rMin)+l.rMin,
+        twinkle:Math.random()*Math.PI*2, ts:Math.random()*0.02+0.008,
+      });
+    });
+  }
+  window.addEventListener('mousemove',e=>{
+    targetX=(e.clientX/window.innerWidth-0.5)*28;
+    targetY=(e.clientY/window.innerHeight-0.5)*18;
+  });
+  window.addEventListener('deviceorientation',e=>{
+    if(e.gamma!=null){targetX=(e.gamma/45)*22;targetY=(e.beta/45)*14;}
+  },{passive:true});
+
+  function spawnShooter(){
+    const fromTop=Math.random()<0.7;
+    const x=fromTop?Math.random()*canvas.width:0;
+    const y=fromTop?0:Math.random()*canvas.height*0.5;
+    const angle=(Math.random()*20+25)*Math.PI/180;
+    const speed=Math.random()*6+5;
+    shooters.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+      length:Math.random()*120+60,opacity:1});
+  }
+  function scheduleNext(){
+    const delay=Math.random()*9000+3000;
+    setTimeout(()=>{
+      if(!document.hidden){
+        spawnShooter();
+        if(Math.random()<0.2) setTimeout(()=>{if(!document.hidden)spawnShooter();},Math.random()*600+200);
+      }
+      scheduleNext();
+    },delay);
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) shooters.length=0;
+    else saveProgress();
+  });
+  window.addEventListener('beforeunload',saveProgress);
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    offsetX+=(targetX-offsetX)*0.035;
+    offsetY+=(targetY-offsetY)*0.035;
+    layers.forEach(l=>{
+      l.stars.forEach(s=>{
+        s.y+=l.speedY; s.twinkle+=s.ts;
+        if(s.y>canvas.height) s.y=-s.r;
+        const px=s.x+offsetX*l.px*100;
+        const py=s.y+offsetY*l.px*100;
+        const op=l.opacity*(0.55+0.45*Math.sin(s.twinkle));
+        ctx.beginPath(); ctx.arc(px,py,s.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,255,${op})`; ctx.fill();
+      });
+    });
+    shooters=shooters.filter(s=>{
+      s.x+=s.vx; s.y+=s.vy; s.opacity-=0.018;
+      if(s.opacity<=0||s.x>canvas.width+100||s.y>canvas.height+100) return false;
+      const tx=s.x-s.vx*(s.length/7), ty=s.y-s.vy*(s.length/7);
+      const g=ctx.createLinearGradient(tx,ty,s.x,s.y);
+      g.addColorStop(0,'rgba(255,255,255,0)');
+      g.addColorStop(0.6,`rgba(180,210,255,${s.opacity*0.4})`);
+      g.addColorStop(1,`rgba(255,255,255,${s.opacity})`);
+      ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(s.x,s.y);
+      ctx.strokeStyle=g; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(s.x,s.y,1.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.opacity})`; ctx.fill();
+      return true;
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); makeStars(); draw();
+  window.addEventListener('resize',()=>{resize();makeStars();});
+  setTimeout(scheduleNext,2500);
+})();
+
+// ═══════════════════════════════════════════════════════
+//  ROCKET — canvas drawn
+// ═══════════════════════════════════════════════════════
+const CHEER_MSGS = [
+  name => `🚀 Keep going, ${name}!`,
+  () => 'You\'ve got this. One question at a time.',
+  () => 'The = sign is counting on you.',
+  name => `${name}, mission control believes in you.`,
+  () => 'Stay focused. You\'re making progress.',
+  () => 'Every correct answer is fuel.',
+  name => `${name}! Don\'t stop now.`,
+  () => 'Orbit is closer than you think.',
+];
+let cheerIndex=0;
+
+// Canvas rocket state
+let rocketAnimY=null, rocketRunning=false;
+let rocketBurst=false, rocketBurstTimer=null;
+
+function isMobile(){ return window.innerWidth<=480; }
+
+function showRocket(){
+  const wrap=document.getElementById('rocket-wrap');
+  wrap.classList.add('show');
+  const rc=document.getElementById('rocket-canvas');
+  rc.width=wrap.offsetWidth||64;
+  rc.height=window.innerHeight;
+  if(!rocketRunning){ rocketRunning=true; rocketLoop(performance.now()); }
+}
+function hideRocket(){
+  document.getElementById('rocket-wrap').classList.remove('show');
+}
+
+function rocketBurstOnCorrect(){
+  if(!isMobile()) return;
+  rocketBurst=true;
+  if(rocketBurstTimer) clearTimeout(rocketBurstTimer);
+  rocketBurstTimer=setTimeout(()=>{ rocketBurst=false; },1800);
+}
+
+function rocketLoop(time){
+  const wrap=document.getElementById('rocket-wrap');
+  if(!wrap.classList.contains('show')){ rocketRunning=false; return; }
+  const rc=document.getElementById('rocket-canvas');
+  if(rc.height!==window.innerHeight){ rc.height=window.innerHeight; }
+  const ctx=rc.getContext('2d');
+  const W=rc.width, H=rc.height;
+  const PAD=28, cx=W/2;
+
+  const pct=Math.min(S.questionsDone/S.questionsPerLevel,1);
+  const targetY=H-PAD-pct*(H-PAD*2);
+  if(rocketAnimY===null) rocketAnimY=H-PAD;
+  rocketAnimY+=(targetY-rocketAnimY)*0.07;
+
+  ctx.clearRect(0,0,W,H);
+
+  const mobile=isMobile();
+
+  if(mobile && !rocketBurst){
+    // ── MOBILE ORB MODE ──
+    const orbOpacity=rocketAnimY>H*0.72?0.15:0.5;
+    const grad=ctx.createRadialGradient(cx,rocketAnimY,0,cx,rocketAnimY,14);
+    grad.addColorStop(0,'rgba(79,142,247,'+orbOpacity+')');
+    grad.addColorStop(0.5,'rgba(79,142,247,'+(orbOpacity*0.5)+')');
+    grad.addColorStop(1,'rgba(79,142,247,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath(); ctx.arc(cx,rocketAnimY,14,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,rocketAnimY,5,0,Math.PI*2);
+    ctx.fillStyle='rgba(120,180,255,'+(orbOpacity+0.25)+')';
+    ctx.fill();
+  } else {
+    // ── FULL ROCKET (desktop always, mobile on burst) ──
+    const tg=ctx.createLinearGradient(0,PAD,0,H-PAD);
+    tg.addColorStop(0,'rgba(79,142,247,0.5)');
+    tg.addColorStop(1,'rgba(79,142,247,0.04)');
+    ctx.save();
+    ctx.strokeStyle=tg; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(cx,PAD); ctx.lineTo(cx,H-PAD); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+
+    const dh=(H-PAD*2)/S.questionsPerLevel;
+    for(let i=0;i<=S.questionsPerLevel;i++){
+      const dy=H-PAD-i*dh;
+      ctx.beginPath();
+      ctx.arc(cx,dy,i<=S.questionsDone?2.5:1.2,0,Math.PI*2);
+      ctx.fillStyle=i<=S.questionsDone?'#4f8ef7':'#2a2a3d';
+      ctx.fill();
+    }
+
+    if(mobile && rocketAnimY>H*0.72) ctx.globalAlpha=0.3;
+    drawCanvasRocket(ctx,cx,rocketAnimY,pct,S.streak,time);
+    ctx.globalAlpha=1;
+  }
+
+  requestAnimationFrame(rocketLoop);
+}
+
+function updateRocket(){}
+
+function rocketTap(){
+  const mobile=isMobile();
+  if(mobile){
+    rocketBurst=true;
+    if(rocketBurstTimer) clearTimeout(rocketBurstTimer);
+    rocketBurstTimer=setTimeout(()=>{ rocketBurst=false; },3000);
+  }
+  const bubble=document.getElementById('cheer-bubble');
+  const msgFn=CHEER_MSGS[cheerIndex%CHEER_MSGS.length];
+  cheerIndex++;
+  bubble.textContent=msgFn(S.name);
+  bubble.style.top=Math.round(rocketAnimY||200)+'px';
+  bubble.classList.add('show');
+  setTimeout(()=>bubble.classList.remove('show'),2800);
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  LAUNCH ANIMATION
+// ═══════════════════════════════════════════════════════
+function playLaunch(msg, cb){
+  const overlay=document.getElementById('launch-overlay');
+  const txt=document.getElementById('launch-text');
+  const rkt=document.getElementById('launch-rocket');
+  txt.textContent=msg;
+  rkt.style.animation='none';
+  rkt.offsetHeight;
+  rkt.style.animation='';
+  overlay.classList.add('show');
+  soundLevelComplete();
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    if(cb) cb();
+  },1600);
+}
+
+// ═══════════════════════════════════════════════════════
+//  MISSION PATCHES
+// ═══════════════════════════════════════════════════════
+function earnPatch(level){
+  const patch=document.getElementById(`patch-l${level}`);
+  if(patch){
+    patch.classList.add('earned');
+    patch.textContent=level===1?'⭐':level===2?'🌟':'🏆';
+  }
+}
+
+// Hook into existing functions
+// (rocket show/hide handled directly in show() above)
+
+show('screen-title');
+</script>
+</body>
+</html>
